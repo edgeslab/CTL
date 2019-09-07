@@ -11,6 +11,14 @@ Our method is based on and adapted from: https://github.com/susanathey/causalTre
 * scipy
 * graphviz (if you want to plot the tree)
 
+## Installation
+
+After downloading and unzipping run
+
+```bash
+pip install CTL/
+```
+
 ## Demo Code
 
 Two demo codes are available to run.
