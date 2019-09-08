@@ -41,6 +41,8 @@ cthv = CausalTree(val_honest=True)
 cthv.fit(x_train, y_train, treat_train)
 cthv_predict = cthv.predict(x_test)
 
+print(ctl_predict)
+
 # if you want to plot a tree
 # ctl.plot_tree(training_data=x_train)
 

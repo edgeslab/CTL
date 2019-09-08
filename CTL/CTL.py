@@ -1,5 +1,4 @@
 from sklearn.model_selection import train_test_split
-# from CTL.ct_util import *
 from CTL.ct_util import *
 import numpy as np
 import time
