@@ -1,3 +1,6 @@
 .idea
 .DS_Store
 CTL/__pycache__
+build/
+CTL.egg-info/
+dist/

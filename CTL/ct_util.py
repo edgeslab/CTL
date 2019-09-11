@@ -3,6 +3,7 @@ import errno
 import numpy as np
 from scipy.stats import ttest_ind
 import subprocess
+from CTL.CTL import *
 
 
 def check_dir(path):
@@ -308,8 +309,40 @@ def check_min_size(min_size, t, treat_split=0.5):
     return nt < min_size or nc < min_size
 
 
-# command = ["dot", "-T" + extension, "-Gdpi=500", dot_filename + '.dot', "-o", output_file + "." + extension]
-# try:
+def grid_search(features, labels, treatment, weights, split_sizes, opt_obj="obj", base_obj=True, weight_obj=False):
+
+    best_obj = -np.inf
+    best_tree = None
+    best_weight = 0.0
+    best_split = 0.0
+
+    for w in weights:
+        for s in split_sizes:
+
+            print("\nTree for %s" % t)
+            print("Elapsed time: %.3f" % (time.time()-start))
+            start_tree = time.time()
+
+            ct = CTL.CausalTree(cont=cont, weight=w, split_size=s, min_size=25,
+                                weight_obj=weight_obj, base_obj=base_obj, val_honest=True)
+            ct.fit(features, labels, treatment)
+            print("Time to build tree: %.3f" % (time.time()-start_tree))
+            ct.prune(alpha=0.05)
+
+            obj = ct.obj
+            if opt_obj == "obj":
+                obj = ct.obj
+            elif opt_obj == "depth":
+                obj = ct.tree_depth
+            elif opt_obj == "mse":
+                obj = ct.mse
+
+            if obj > best_obj:
+                best_tree = ct
+                best_obj = obj
+                best_weight = w
+                best_split = s
+
 
 
 def get_test_mse(test_data, outcome, treatment, tree):
