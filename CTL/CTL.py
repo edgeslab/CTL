@@ -57,7 +57,8 @@ class CausalTree:
             self.current_obj = current_obj
             self.effect = effect
             self.p_val = p_val
-            self.treat_split = treat_split  # treatment splitting location (for continuous values)
+            # treatment splitting location (for continuous values)
+            self.treat_split = treat_split
             self.variance = node_var
 
             self.true_branch = true_branch  # pointer to node for true branch
@@ -89,19 +90,22 @@ class CausalTree:
             if self.val_honest or self.honest:
                 if self.val_honest:
                     train_rows, est_rows, train_outcome, est_labels, train_treat, est_treatment = \
-                        train_test_split(rows, labels, treatment, shuffle=True, test_size=self.split_size)
+                        train_test_split(rows, labels, treatment,
+                                         shuffle=True, test_size=self.split_size)
                 else:
                     train_rows, est_rows, train_outcome, est_labels, train_treat, est_treatment = \
-                        train_test_split(rows, labels, treatment, shuffle=True, test_size=0.5)
+                        train_test_split(rows, labels, treatment,
+                                         shuffle=True, test_size=0.5)
 
                 _, effect = tau_squared(est_labels, est_treatment)
                 p_val = get_pval(est_labels, est_treatment)
 
                 train_to_est_ratio = est_rows.shape[0] / train_rows.shape[0]
-                current_var_treat, current_var_control = variance(train_outcome, train_treat)
+                current_var_treat, current_var_control = variance(
+                    train_outcome, train_treat)
                 num_cont, num_treat = get_num_treat(train_treat)[1:]
                 current_var = (1 + train_to_est_ratio) * (
-                        (current_var_treat / num_treat) + (current_var_control / num_cont))
+                    (current_var_treat / num_treat) + (current_var_control / num_cont))
             else:
                 _, effect = tau_squared(labels, treatment)
                 p_val = get_pval(labels, treatment)
@@ -109,22 +113,30 @@ class CausalTree:
             if self.val_honest or self.honest:
                 if self.val_honest:
                     train_rows, est_rows, train_outcome, est_labels, train_treat, est_treatment = \
-                        train_test_split(rows, labels, treatment, shuffle=True, test_size=self.split_size)
+                        train_test_split(rows, labels, treatment,
+                                         shuffle=True, test_size=self.split_size)
                 else:
                     train_rows, est_rows, train_outcome, est_labels, train_treat, est_treatment = \
-                        train_test_split(rows, labels, treatment, shuffle=True, test_size=0.5)
+                        train_test_split(rows, labels, treatment,
+                                         shuffle=True, test_size=0.5)
 
-                _, _, curr_split = tau_squared_cont(train_outcome, train_treat, self.min_size, self.quartile)
-                _, effect = tau_squared(est_labels, est_treatment, treat_split=curr_split)
-                p_val = get_pval(est_labels, est_treatment, treat_split=curr_split)
+                _, _, curr_split = tau_squared_cont(
+                    train_outcome, train_treat, self.min_size, self.quartile)
+                _, effect = tau_squared(
+                    est_labels, est_treatment, treat_split=curr_split)
+                p_val = get_pval(est_labels, est_treatment,
+                                 treat_split=curr_split)
 
                 train_to_est_ratio = est_rows.shape[0] / train_rows.shape[0]
-                current_var_treat, current_var_control = variance(train_outcome, train_treat)
-                num_cont, num_treat = get_num_treat(train_treat, self.min_size)[1:]
+                current_var_treat, current_var_control = variance(
+                    train_outcome, train_treat)
+                num_cont, num_treat = get_num_treat(
+                    train_treat, self.min_size)[1:]
                 current_var = (1 + train_to_est_ratio) * (
-                        (current_var_treat / num_treat) + (current_var_control / num_cont))
+                    (current_var_treat / num_treat) + (current_var_control / num_cont))
             else:
-                _, effect, curr_split = tau_squared_cont(labels, treatment, self.min_size, self.quartile)
+                _, effect, curr_split = tau_squared_cont(
+                    labels, treatment, self.min_size, self.quartile)
                 p_val = get_pval(labels, treatment, curr_split)
         else:
             # otherwise something is wrong, assume binary learn
@@ -136,7 +148,8 @@ class CausalTree:
 
         if self.honest:
             rows, est_rows, labels, est_labels, treatment, est_treatment = \
-                train_test_split(rows, labels, treatment, shuffle=True, test_size=0.5)
+                train_test_split(rows, labels, treatment,
+                                 shuffle=True, test_size=0.5)
             self.root = self.Node(col=-1, value=None, current_obj=0.0, effect=effect,
                                   p_val=p_val, treat_split=curr_split, node_var=current_var, node_depth=0)
             self.root = self.fit_r(rows, labels, treatment, curr_depth=0, node=self.root,
@@ -144,7 +157,8 @@ class CausalTree:
         else:
             self.root = self.Node(col=-1, value=None, current_obj=0.0, effect=effect,
                                   p_val=p_val, treat_split=curr_split, node_depth=0)
-            self.root = self.fit_r(rows, labels, treatment, curr_depth=0, node=self.root)
+            self.root = self.fit_r(
+                rows, labels, treatment, curr_depth=0, node=self.root)
 
     def fit_r(self, rows, labels, treatment, curr_depth=0, node=None,
               est_rows=None, est_labels=None, est_treatment=None):
@@ -153,7 +167,8 @@ class CausalTree:
             return node
 
         train_rows, val_rows, train_outcome, val_outcome, train_treat, val_treat = \
-            train_test_split(rows, labels, treatment, shuffle=True, test_size=self.split_size)
+            train_test_split(rows, labels, treatment,
+                             shuffle=True, test_size=self.split_size)
 
         if self.val_honest:
             train_to_est_ratio = val_rows.shape[0] / train_rows.shape[0]
@@ -203,15 +218,18 @@ class CausalTree:
 
             if self.max_values is not None:
                 if self.max_values < 1:
-                    idx = np.round(np.linspace(0, len(unique_vals) - 1, self.max_values * len(unique_vals))).astype(int)
+                    idx = np.round(np.linspace(
+                        0, len(unique_vals) - 1, self.max_values * len(unique_vals))).astype(int)
                     unique_vals = unique_vals[idx]
                 else:
-                    idx = np.round(np.linspace(0, len(unique_vals) - 1, self.max_values)).astype(int)
+                    idx = np.round(np.linspace(
+                        0, len(unique_vals) - 1, self.max_values)).astype(int)
                     unique_vals = unique_vals[idx]
 
             if self.verbose:
                 self.time = time.time() - self.start
-                print("Depth: %d, Column: %d, Elapsed Time: %.3f" %( curr_depth-1, col, self.time))
+                print("Depth: %d, Column: %d, Elapsed Time: %.3f" %
+                      (curr_depth - 1, col, self.time))
 
             for value in unique_vals:
                 # binary treatment splitting
@@ -227,7 +245,8 @@ class CausalTree:
                     (val_set1, val_set2, val_y1, val_y2, val_treat1, val_treat2) \
                         = divide_set(val_rows, val_outcome, val_treat, col, value)
 
-                    val_size = self.split_size*self.min_size if self.split_size*self.min_size > 2 else 2
+                    val_size = self.split_size * \
+                        self.min_size if self.split_size * self.min_size > 2 else 2
                     if check_min_size(val_size, val_treat1) or \
                             check_min_size(val_size, val_treat2):
                         continue
@@ -240,17 +259,23 @@ class CausalTree:
                             continue
 
                     if self.honest:
-                        tb_num_cont, tb_num_treat = get_treat_size(train_treat1)
-                        fb_num_cont, fb_num_treat = get_treat_size(train_treat2)
-                        var1_treat, var1_control = variance(train_y1, train_treat1)
-                        var2_treat, var2_control = variance(train_y2, train_treat2)
+                        tb_num_cont, tb_num_treat = get_treat_size(
+                            train_treat1)
+                        fb_num_cont, fb_num_treat = get_treat_size(
+                            train_treat2)
+                        var1_treat, var1_control = variance(
+                            train_y1, train_treat1)
+                        var2_treat, var2_control = variance(
+                            train_y2, train_treat2)
                         tb_var = (1 + train_to_est_ratio) * (
-                                (var1_treat / (tb_num_treat + 1)) + (var1_control / (tb_num_cont + 1)))
+                            (var1_treat / (tb_num_treat + 1)) + (var1_control / (tb_num_cont + 1)))
                         fb_var = (1 + train_to_est_ratio) * (
-                                (var2_treat / (fb_num_treat + 1)) + (var2_control / (fb_num_cont + 1)))
+                            (var2_treat / (fb_num_treat + 1)) + (var2_control / (fb_num_cont + 1)))
 
-                    tb_eval, tb_mse = self.eval_func(train_y1, train_treat1, val_y1, val_treat1)
-                    fb_eval, fb_mse = self.eval_func(train_y2, train_treat2, val_y2, val_treat2)
+                    tb_eval, tb_mse = self.eval_func(
+                        train_y1, train_treat1, val_y1, val_treat1)
+                    fb_eval, fb_mse = self.eval_func(
+                        train_y2, train_treat2, val_y2, val_treat2)
 
                     split_eval = (tb_eval + fb_eval) - (tb_var + fb_var)
                     gain = -(node.current_obj - node.variance) + split_eval
@@ -281,17 +306,23 @@ class CausalTree:
                         if np.unique(est_y1).shape[0] <= 1 or np.unique(est_y1).shape[0] <= 1:
                             continue
 
-                    tb_eval, tb_split, tb_mse = self.eval_func(train_y1, train_treat1, val_y1, val_treat1)
-                    fb_eval, fb_split, fb_mse = self.eval_func(train_y2, train_treat2, val_y2, val_treat2)
+                    tb_eval, tb_split, tb_mse = self.eval_func(
+                        train_y1, train_treat1, val_y1, val_treat1)
+                    fb_eval, fb_split, fb_mse = self.eval_func(
+                        train_y2, train_treat2, val_y2, val_treat2)
                     if self.honest:
-                        tb_num_cont, tb_num_treat = get_treat_size(train_treat1, treat_split=tb_split)
-                        fb_num_cont, fb_num_treat = get_treat_size(train_treat2, treat_split=fb_split)
-                        var1_treat, var1_control = variance(train_y1, train_treat1, treat_split=tb_split)
-                        var2_treat, var2_control = variance(train_y2, train_treat2, treat_split=fb_split)
+                        tb_num_cont, tb_num_treat = get_treat_size(
+                            train_treat1, treat_split=tb_split)
+                        fb_num_cont, fb_num_treat = get_treat_size(
+                            train_treat2, treat_split=fb_split)
+                        var1_treat, var1_control = variance(
+                            train_y1, train_treat1, treat_split=tb_split)
+                        var2_treat, var2_control = variance(
+                            train_y2, train_treat2, treat_split=fb_split)
                         tb_var = (1 + train_to_est_ratio) * (
-                                (var1_treat / (tb_num_treat + 1)) + (var1_control / (tb_num_cont + 1)))
+                            (var1_treat / (tb_num_treat + 1)) + (var1_control / (tb_num_cont + 1)))
                         fb_var = (1 + train_to_est_ratio) * (
-                                (var2_treat / (fb_num_treat + 1)) + (var2_control / (fb_num_cont + 1)))
+                            (var2_treat / (fb_num_treat + 1)) + (var2_control / (fb_num_cont + 1)))
 
                     split_eval = (tb_eval + fb_eval)
                     gain = -node.current_obj + split_eval
@@ -309,8 +340,10 @@ class CausalTree:
                 node.col = best_attribute[0]
                 node.value = best_attribute[1]
 
-                (set1, set2, y1, y2, treat1, treat2) = divide_set(rows, labels, treatment, node.col, node.value)
-                est_set1, est_set2, est_y1, est_y2, est_treat1, est_treat2 = [0] * 6
+                (set1, set2, y1, y2, treat1, treat2) = divide_set(
+                    rows, labels, treatment, node.col, node.value)
+                est_set1, est_set2, est_y1, est_y2, est_treat1, est_treat2 = [
+                    0] * 6
 
                 if self.val_honest:
                     (use_set1, use_set2, use_y1, use_y2, use_treat1, use_treat2) \
@@ -376,8 +409,10 @@ class CausalTree:
                 node.col = best_attribute[0]
                 node.value = best_attribute[1]
 
-                (set1, set2, y1, y2, treat1, treat2) = divide_set(rows, labels, treatment, node.col, node.value)
-                est_set1, est_set2, est_y1, est_y2, est_treat1, est_treat2 = [0] * 6
+                (set1, set2, y1, y2, treat1, treat2) = divide_set(
+                    rows, labels, treatment, node.col, node.value)
+                est_set1, est_set2, est_y1, est_y2, est_treat1, est_treat2 = [
+                    0] * 6
 
                 if self.val_honest:
                     (use_set1, use_set2, use_y1, use_y2, use_treat1, use_treat2) \
@@ -391,10 +426,14 @@ class CausalTree:
                     (use_set1, use_set2, use_y1, use_y2, use_treat1, use_treat2) \
                         = divide_set(train_rows, train_outcome, train_treat, node.col, node.value)
 
-                best_tb_effect = self.effect(use_y1, use_treat1, treat_split=best_tb_split)
-                best_fb_effect = self.effect(use_y2, use_treat2, treat_split=best_fb_split)
-                tb_p_val = get_pval(use_y1, use_treat1, treat_split=best_tb_split)
-                fb_p_val = get_pval(use_y2, use_treat2, treat_split=best_fb_split)
+                best_tb_effect = self.effect(
+                    use_y1, use_treat1, treat_split=best_tb_split)
+                best_fb_effect = self.effect(
+                    use_y2, use_treat2, treat_split=best_fb_split)
+                tb_p_val = get_pval(use_y1, use_treat1,
+                                    treat_split=best_tb_split)
+                fb_p_val = get_pval(use_y2, use_treat2,
+                                    treat_split=best_fb_split)
 
                 self.obj = self.obj - (node.current_obj - node.variance) + (best_tb_obj + best_fb_obj -
                                                                             best_tb_var - best_fb_var)
@@ -524,7 +563,8 @@ class CausalTree:
         # do the min_size check on training set
         treat_num = np.sum(ttt == 1, axis=1)
         cont_num = np.sum(ttt == 0, axis=1)
-        min_size_idx = np.where(np.logical_and(treat_num >= self.min_size, cont_num >= self.min_size))
+        min_size_idx = np.where(np.logical_and(
+            treat_num >= self.min_size, cont_num >= self.min_size))
 
         unique_treatment = unique_treatment[min_size_idx]
         ttt = ttt[min_size_idx]
@@ -539,7 +579,8 @@ class CausalTree:
         # do the min_size check on validation set
         treat_num = np.sum(ttv == 1, axis=1)
         cont_num = np.sum(ttv == 0, axis=1)
-        min_size_idx = np.where(np.logical_and(treat_num >= self.min_size, cont_num >= self.min_size))
+        min_size_idx = np.where(np.logical_and(
+            treat_num >= self.min_size, cont_num >= self.min_size))
 
         unique_treatment = unique_treatment[min_size_idx]
         ttt = ttt[min_size_idx]
@@ -590,7 +631,8 @@ class CausalTree:
             f.write('digraph Tree {\n')
             f.write('node [shape=box, fontsize=32] ;\n')
             f.write('edge [fontsize=24] ;\n')
-            self.tree_to_dot_r(tree, feat_names, f, counter=0, alpha=alpha, show_pval=show_pval)
+            self.tree_to_dot_r(tree, feat_names, f, counter=0,
+                               alpha=alpha, show_pval=show_pval)
             f.write("}")
 
     @staticmethod
@@ -600,7 +642,8 @@ class CausalTree:
             command = ["dot", "-T" + extension, "-Gdpi=200", dot_filename + '.dot', "-o",
                        dot_filename + "." + extension]
         else:
-            command = ["dot", "-T" + extension, "-Gdpi=200", dot_filename + '.dot', "-o", output_file + "." + extension]
+            command = ["dot", "-T" + extension, "-Gdpi=200",
+                       dot_filename + '.dot', "-o", output_file + "." + extension]
         try:
             if os.name == 'nt':
                 subprocess.check_call(command, shell=True)
@@ -660,11 +703,14 @@ class CausalTree:
 
             dot_file_name = dot_folder + file_name
             img_file_name = file
-            self.tree_to_dot(self.root, feat_names, dot_file_name, alpha=alpha, show_pval=show_pval)
+            self.tree_to_dot(self.root, feat_names, dot_file_name,
+                             alpha=alpha, show_pval=show_pval)
             if create_png:
-                self.dot_to_png(dot_file_name, img_file_name, extension=extension)
+                self.dot_to_png(dot_file_name, img_file_name,
+                                extension=extension)
         else:
-            self.tree_to_dot(self.root, feat_names, file, alpha=alpha, show_pval=show_pval)
+            self.tree_to_dot(self.root, feat_names, file,
+                             alpha=alpha, show_pval=show_pval)
             if create_png:
                 self.dot_to_png(file, extension=extension)
 
@@ -758,7 +804,8 @@ class CausalTree:
                 f.write(str(curr_node) + ' -> ' + str(counter) + ' ;\n')
             # f.write(str(curr_node) + ' -> ' + str(counter) +
             #         ' [labeldistance=2.5, labelangle=45, headlabel=' + decision + '];\n')
-            counter = self.tree_to_dot_r(node.true_branch, feat_names, f, counter, alpha=alpha, show_pval=show_pval)
+            counter = self.tree_to_dot_r(
+                node.true_branch, feat_names, f, counter, alpha=alpha, show_pval=show_pval)
         if node.false_branch is not None:
             if curr_node == 0:
                 f.write(str(curr_node) + ' -> ' + str(counter) +
@@ -767,7 +814,8 @@ class CausalTree:
                 f.write(str(curr_node) + ' -> ' + str(counter) + ' ;\n')
             # f.write(str(curr_node) + ' -> ' + str(counter) +
             #         ' [labeldistance=2.5, labelangle=45, headlabel=' + opp_decision + '];\n')
-            counter = self.tree_to_dot_r(node.false_branch, feat_names, f, counter, alpha=alpha, show_pval=show_pval)
+            counter = self.tree_to_dot_r(
+                node.false_branch, feat_names, f, counter, alpha=alpha, show_pval=show_pval)
 
         return counter
 
@@ -801,8 +849,9 @@ class CausalTree:
                     node.leaf = True
                     self.num_leaves = self.num_leaves - 1
                     self.obj = self.obj - (tb.current_obj + fb.current_obj - tb.variance - fb.variance) + \
-                               node.current_obj - node.variance
-                    self.mse = self.mse - (tb.node_mse + fb.node_mse) + node.node_mse
+                        node.current_obj - node.variance
+                    self.mse = self.mse - \
+                        (tb.node_mse + fb.node_mse) + node.node_mse
                     if tb.node_depth == self.tree_depth:
                         self.tree_depth = self.tree_depth - 1
 
@@ -832,7 +881,8 @@ class CausalTree:
                         if isinstance(v, int):
                             decision_str = "%s >= %d" % (node.feature_name, v)
                         else:
-                            decision_str = "%s >= %.3f" % (node.feature_name, v)
+                            decision_str = "%s >= %.3f" % (
+                                node.feature_name, v)
                     else:
                         branch = node.false_branch
                         if isinstance(v, int):
@@ -870,7 +920,8 @@ class CausalTree:
                                                                                              features=features_list)
                 test_feature_lists.append(features_list)
             else:
-                leaf_results[i], leaf_treat_split[i], predict[i] = classify_r(self.root, test_example)
+                leaf_results[i], leaf_treat_split[i], predict[i] = classify_r(
+                    self.root, test_example)
 
         if return_features:
             if return_groups and self.cont:
@@ -957,14 +1008,17 @@ class CausalTree:
                     if node.feature_name not in list_vars:
                         list_vars.append(node.feature_name)
                         list_depths.append(node.depth)
-                list_vars = get_variables_r(node.true_branch, list_vars, list_of_depths)
-                list_vars = get_variables_r(node.false_branch, list_vars, list_of_depths)
+                list_vars = get_variables_r(
+                    node.true_branch, list_vars, list_of_depths)
+                list_vars = get_variables_r(
+                    node.false_branch, list_vars, list_of_depths)
 
                 return list_vars, list_depths
 
         list_of_vars = []
         list_of_depths = []
-        list_of_vars, list_of_depths = get_variables_r(self.root, list_of_vars, list_of_depths)
+        list_of_vars, list_of_depths = get_variables_r(
+            self.root, list_of_vars, list_of_depths)
 
         sorted_vars = []
         sorted_idx = np.argsort(list_of_depths)
@@ -972,3 +1026,60 @@ class CausalTree:
             sorted_vars.append(list_of_vars[i])
 
         return sorted_vars
+
+
+def grid_search(features, labels, treatment, weights=None, split_sizes=None, cont=None, opt_obj="obj", base_obj=True, weight_obj=False, verbose=True):
+
+    if weights is None:
+        weights = np.arange(0.0, 1.01, 0.1)
+
+    if split_sizes is None:
+        split_sizes = np.arange(0.1, 0.91, 0.1)
+
+    if cont is None:
+        if np.unique(treatment).shape[0] > 2:
+            cont = True
+        else:
+            cont = False
+
+    best_obj = -np.inf
+    best_tree = None
+    best_weight = 0.0
+    best_split = 0.0
+
+    start = time.time()
+
+    for w in weights:
+        for s in split_sizes:
+
+            if verbose:
+                print(f"Tree for w={w}, s={s}")
+                print(f"Elapsed time: {time.time()-start:.3f}")
+            start_tree = time.time()
+
+            ct = CausalTree(cont=cont, weight=w, split_size=s, min_size=25,
+                            weight_obj=weight_obj, base_obj=base_obj, val_honest=True)
+            ct.fit(features, labels, treatment)
+            ct.prune(alpha=0.05)
+
+            obj = ct.obj
+            if opt_obj == "obj":
+                obj = ct.obj
+            elif opt_obj == "depth":
+                obj = ct.tree_depth
+            elif opt_obj == "mse":
+                obj = ct.mse
+
+            if obj > best_obj:
+                best_tree = ct
+                best_obj = obj
+                best_weight = w
+                best_split = s
+
+            if verbose:
+                print(f"Time to build tree: {time.time()-start_tree:.3f}")
+                print(f"Current objective ({opt_obj}): {obj}")
+                print(f"Current best objective ({opt_obj}): {best_obj}")
+                print()
+
+    return ct, best_weight, best_split

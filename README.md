@@ -13,10 +13,8 @@ Our method is based on and adapted from: https://github.com/susanathey/causalTre
 
 ## Installation
 
-After downloading and unzipping run
-
 ```bash
-pip install CTL/
+pip install causal_tree_learn
 ```
 
 ## Demo Code

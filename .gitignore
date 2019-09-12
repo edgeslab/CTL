@@ -4,3 +4,4 @@ CTL/__pycache__
 build/
 CTL.egg-info/
 dist/
+*egg-info/

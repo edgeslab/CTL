@@ -3,7 +3,8 @@ import errno
 import numpy as np
 from scipy.stats import ttest_ind
 import subprocess
-from CTL.CTL import *
+# from CTL.CTL import *
+import time
 
 
 def check_dir(path):
@@ -89,7 +90,8 @@ def tau_squared_cont(outcome, treatment, min_size=1, quartile=False):
 
     treat_num = np.sum(tt == 1, axis=1)
     cont_num = np.sum(tt == 0, axis=1)
-    min_size_idx = np.where(np.logical_and(treat_num >= min_size, cont_num >= min_size))
+    min_size_idx = np.where(np.logical_and(
+        treat_num >= min_size, cont_num >= min_size))
 
     unique_treatment = unique_treatment[min_size_idx]
     tt = tt[min_size_idx]
@@ -230,7 +232,8 @@ def smape(y_actual, y_predict, leaf_results=None):
 
 
 def size_check_fail(rows, labels, treatment, col, value, min_size):
-    (set1, set2, y1, y2, treat1, treat2) = divide_set(rows, labels, treatment, col, value)
+    (set1, set2, y1, y2, treat1, treat2) = divide_set(
+        rows, labels, treatment, col, value)
 
     if np.unique(y1).shape[0] <= 1 or np.unique(y2).shape[0] <= 1:
         return True
@@ -283,7 +286,8 @@ def dot_png(folder, extension='png', dpi=200):
     items_dir = [folder + 'dot_folder/' + i for i in items]
 
     for i, item in enumerate(items_dir):
-        command = ["dot", "-T" + extension, "-Gdpi=" + str(dpi), item, "-o", folder + items[i][:-3] + extension]
+        command = ["dot", "-T" + extension, "-Gdpi=" +
+                   str(dpi), item, "-o", folder + items[i][:-3] + extension]
         # print(command)
         try:
             if os.name == 'nt':
@@ -307,42 +311,6 @@ def check_min_size(min_size, t, treat_split=0.5):
     nt, nc = get_treat_size(t, treat_split)
 
     return nt < min_size or nc < min_size
-
-
-def grid_search(features, labels, treatment, weights, split_sizes, opt_obj="obj", base_obj=True, weight_obj=False):
-
-    best_obj = -np.inf
-    best_tree = None
-    best_weight = 0.0
-    best_split = 0.0
-
-    for w in weights:
-        for s in split_sizes:
-
-            print("\nTree for %s" % t)
-            print("Elapsed time: %.3f" % (time.time()-start))
-            start_tree = time.time()
-
-            ct = CTL.CausalTree(cont=cont, weight=w, split_size=s, min_size=25,
-                                weight_obj=weight_obj, base_obj=base_obj, val_honest=True)
-            ct.fit(features, labels, treatment)
-            print("Time to build tree: %.3f" % (time.time()-start_tree))
-            ct.prune(alpha=0.05)
-
-            obj = ct.obj
-            if opt_obj == "obj":
-                obj = ct.obj
-            elif opt_obj == "depth":
-                obj = ct.tree_depth
-            elif opt_obj == "mse":
-                obj = ct.mse
-
-            if obj > best_obj:
-                best_tree = ct
-                best_obj = obj
-                best_weight = w
-                best_split = s
-
 
 
 def get_test_mse(test_data, outcome, treatment, tree):
