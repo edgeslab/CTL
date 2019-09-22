@@ -4,18 +4,42 @@ import numpy as np
 import time
 
 
-# TODO: need to get better objective value of heterogeneity rather than w/e objective I use
-# TODO: should I weight the objective?
-# TODO: remove the magnitude?
-# TODO: triggers, NaN
-# TODO: better way to set best gains
-# TODO: update plot tree for dpi as parameter
-
 # Class that defines the causal tree nodes
 class CausalTree:
+    """
+    A class for the Causal Tree
+    """
     def __init__(self, cont=False, max_depth=-1, min_size=2, weight=0.5, seed=None, split_size=0.5, honest=False,
                  val_honest=False, variables=None, weight_obj=False, base_obj=True, quartile=False, verbose=False,
                  max_values=None):
+        """
+        Parameters
+        ----------
+        :param cont: bool
+            True if treatment is continuous, otherwise False
+        :param max_depth: int
+            The maximum depth of the tree
+        :param min_size: int
+            The minimum amount of examples that needs to be in any node
+        :param weight: float [0,1]
+            The weight of the cost function. Higher weight means more importance on cost
+        :param seed: int
+            Set the seed of the causal tree splits
+        :param split_size: float (0,1)
+            How much to split off as a validation set
+        :param honest: bool
+            Whether to use the honest objective (from Athey and Imbens 2016)
+        :param val_honest: bool
+            Whether to use the combined honest/CTL objective
+        :param variables: list
+            The list of variable names for plotting the tree
+        :param weight_obj: bool
+        :param base_obj: bool
+        :param quartile: bool
+            Whether to only consider the 1st to 3rd quartiles for triggers
+        :param verbose:
+        :param max_values:
+        """
         self.root = None
         self.max = -np.inf
         self.min = np.inf
@@ -105,7 +129,7 @@ class CausalTree:
                     train_outcome, train_treat)
                 num_cont, num_treat = get_num_treat(train_treat)[1:]
                 current_var = (1 + train_to_est_ratio) * (
-                    (current_var_treat / num_treat) + (current_var_control / num_cont))
+                        (current_var_treat / num_treat) + (current_var_control / num_cont))
             else:
                 _, effect = tau_squared(labels, treatment)
                 p_val = get_pval(labels, treatment)
@@ -133,7 +157,7 @@ class CausalTree:
                 num_cont, num_treat = get_num_treat(
                     train_treat, self.min_size)[1:]
                 current_var = (1 + train_to_est_ratio) * (
-                    (current_var_treat / num_treat) + (current_var_control / num_cont))
+                        (current_var_treat / num_treat) + (current_var_control / num_cont))
             else:
                 _, effect, curr_split = tau_squared_cont(
                     labels, treatment, self.min_size, self.quartile)
@@ -246,7 +270,7 @@ class CausalTree:
                         = divide_set(val_rows, val_outcome, val_treat, col, value)
 
                     val_size = self.split_size * \
-                        self.min_size if self.split_size * self.min_size > 2 else 2
+                               self.min_size if self.split_size * self.min_size > 2 else 2
                     if check_min_size(val_size, val_treat1) or \
                             check_min_size(val_size, val_treat2):
                         continue
@@ -268,9 +292,9 @@ class CausalTree:
                         var2_treat, var2_control = variance(
                             train_y2, train_treat2)
                         tb_var = (1 + train_to_est_ratio) * (
-                            (var1_treat / (tb_num_treat + 1)) + (var1_control / (tb_num_cont + 1)))
+                                (var1_treat / (tb_num_treat + 1)) + (var1_control / (tb_num_cont + 1)))
                         fb_var = (1 + train_to_est_ratio) * (
-                            (var2_treat / (fb_num_treat + 1)) + (var2_control / (fb_num_cont + 1)))
+                                (var2_treat / (fb_num_treat + 1)) + (var2_control / (fb_num_cont + 1)))
 
                     tb_eval, tb_mse = self.eval_func(
                         train_y1, train_treat1, val_y1, val_treat1)
@@ -320,9 +344,9 @@ class CausalTree:
                         var2_treat, var2_control = variance(
                             train_y2, train_treat2, treat_split=fb_split)
                         tb_var = (1 + train_to_est_ratio) * (
-                            (var1_treat / (tb_num_treat + 1)) + (var1_control / (tb_num_cont + 1)))
+                                (var1_treat / (tb_num_treat + 1)) + (var1_control / (tb_num_cont + 1)))
                         fb_var = (1 + train_to_est_ratio) * (
-                            (var2_treat / (fb_num_treat + 1)) + (var2_control / (fb_num_cont + 1)))
+                                (var2_treat / (fb_num_treat + 1)) + (var2_control / (fb_num_cont + 1)))
 
                     split_eval = (tb_eval + fb_eval)
                     gain = -node.current_obj + split_eval
@@ -343,7 +367,7 @@ class CausalTree:
                 (set1, set2, y1, y2, treat1, treat2) = divide_set(
                     rows, labels, treatment, node.col, node.value)
                 est_set1, est_set2, est_y1, est_y2, est_treat1, est_treat2 = [
-                    0] * 6
+                                                                                 0] * 6
 
                 if self.val_honest:
                     (use_set1, use_set2, use_y1, use_y2, use_treat1, use_treat2) \
@@ -412,7 +436,7 @@ class CausalTree:
                 (set1, set2, y1, y2, treat1, treat2) = divide_set(
                     rows, labels, treatment, node.col, node.value)
                 est_set1, est_set2, est_y1, est_y2, est_treat1, est_treat2 = [
-                    0] * 6
+                                                                                 0] * 6
 
                 if self.val_honest:
                     (use_set1, use_set2, use_y1, use_y2, use_treat1, use_treat2) \
@@ -636,13 +660,13 @@ class CausalTree:
             f.write("}")
 
     @staticmethod
-    def dot_to_png(dot_filename="tree", output_file=None, extension="png"):
+    def dot_to_png(dot_filename="tree", output_file=None, extension="png", dpi=100):
 
         if output_file is None:
-            command = ["dot", "-T" + extension, "-Gdpi=200", dot_filename + '.dot', "-o",
+            command = ["dot", "-T" + extension, f"-Gdpi={dpi}", dot_filename + '.dot', "-o",
                        dot_filename + "." + extension]
         else:
-            command = ["dot", "-T" + extension, "-Gdpi=200",
+            command = ["dot", "-T" + extension, f"-Gdpi={dpi}",
                        dot_filename + '.dot', "-o", output_file + "." + extension]
         try:
             if os.name == 'nt':
@@ -679,7 +703,7 @@ class CausalTree:
         return effect
 
     def plot_tree(self, feat_names=None, training_data=None, file="tree", alpha=0.05, show_pval=True,
-                  create_png=True, extension="png"):
+                  create_png=True, extension="png", dpi=100):
 
         if feat_names is None:
             if training_data is not None:
@@ -707,12 +731,12 @@ class CausalTree:
                              alpha=alpha, show_pval=show_pval)
             if create_png:
                 self.dot_to_png(dot_file_name, img_file_name,
-                                extension=extension)
+                                extension=extension, dpi=dpi)
         else:
             self.tree_to_dot(self.root, feat_names, file,
                              alpha=alpha, show_pval=show_pval)
             if create_png:
-                self.dot_to_png(file, extension=extension)
+                self.dot_to_png(file, extension=extension, dpi=dpi)
 
     def tree_to_dot_r(self, node, feat_names, f, counter, alpha=0.05, show_pval=True):
         curr_node = counter
@@ -849,9 +873,9 @@ class CausalTree:
                     node.leaf = True
                     self.num_leaves = self.num_leaves - 1
                     self.obj = self.obj - (tb.current_obj + fb.current_obj - tb.variance - fb.variance) + \
-                        node.current_obj - node.variance
+                               node.current_obj - node.variance
                     self.mse = self.mse - \
-                        (tb.node_mse + fb.node_mse) + node.node_mse
+                               (tb.node_mse + fb.node_mse) + node.node_mse
                     if tb.node_depth == self.tree_depth:
                         self.tree_depth = self.tree_depth - 1
 
@@ -1028,8 +1052,8 @@ class CausalTree:
         return sorted_vars
 
 
-def grid_search(features, labels, treatment, weights=None, split_sizes=None, cont=None, opt_obj="obj", base_obj=True, weight_obj=False, verbose=True):
-
+def grid_search(features, labels, treatment, weights=None, split_sizes=None, cont=None, opt_obj="obj", base_obj=True,
+                weight_obj=False, verbose=True):
     if weights is None:
         weights = np.arange(0.0, 1.01, 0.1)
 
@@ -1054,7 +1078,7 @@ def grid_search(features, labels, treatment, weights=None, split_sizes=None, con
 
             if verbose:
                 print(f"Tree for w={w}, s={s}")
-                print(f"Elapsed time: {time.time()-start:.3f}")
+                print(f"Elapsed time: {time.time() - start:.3f}")
             start_tree = time.time()
 
             ct = CausalTree(cont=cont, weight=w, split_size=s, min_size=25,
@@ -1077,9 +1101,9 @@ def grid_search(features, labels, treatment, weights=None, split_sizes=None, con
                 best_split = s
 
             if verbose:
-                print(f"Time to build tree: {time.time()-start_tree:.3f}")
+                print(f"Time to build tree: {time.time() - start_tree:.3f}")
                 print(f"Current objective ({opt_obj}): {obj}")
                 print(f"Current best objective ({opt_obj}): {best_obj}")
                 print()
 
-    return ct, best_weight, best_split
+    return best_tree, best_weight, best_split
