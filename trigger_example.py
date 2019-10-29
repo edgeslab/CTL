@@ -37,7 +37,7 @@ for i in range(len(features)):
     print(groups[i], features[i])
 
 # if you want to plot a tree
-cthv.plot_tree(training_data=x_train)
+cthv.plot_tree(training_data=x_train, file="output/tree")
 
 # if you have variable names
 # ctl.plot_tree(feat_names=variable_names)
