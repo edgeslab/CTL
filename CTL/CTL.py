@@ -903,23 +903,29 @@ class CausalTree:
                     if v >= node.value:
                         branch = node.true_branch
                         if isinstance(v, int):
-                            decision_str = "%s >= %d" % (node.feature_name, v)
+                            # decision_str = "%s >= %d" % (node.feature_name, v)
+                            decision_str = node.feature_split
                         else:
-                            decision_str = "%s >= %.3f" % (
-                                node.feature_name, v)
+                            # decision_str = "%s >= %.3f" % (
+                            #     node.feature_name, v)
+                            decision_str = node.feature_split
                     else:
                         branch = node.false_branch
                         if isinstance(v, int):
-                            decision_str = "%s < %d" % (node.feature_name, v)
+                            # decision_str = "%s < %d" % (node.feature_name, v)
+                            decision_str = node.feature_split
                         else:
-                            decision_str = "%s < %.3f" % (node.feature_name, v)
+                            # decision_str = "%s < %.3f" % (node.feature_name, v)
+                            decision_str = node.feature_split
                 else:
                     if v == node.value:
                         branch = node.true_branch
-                        decision_str = "%s == %s" % (node.feature_name, v)
+                        # decision_str = "%s == %s" % (node.feature_name, v)
+                        decision_str = node.feature_split
                     else:
                         branch = node.false_branch
-                        decision_str = "%s != %s" % (node.feature_name, v)
+                        # decision_str = "%s != %s" % (node.feature_name, v)
+                        decision_str = node.feature_split
 
             if features is not None:
                 features.append(decision_str)
