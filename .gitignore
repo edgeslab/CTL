@@ -8,3 +8,5 @@ dist/
 output/
 tree.dot
 tree.png
+test.py
+test_script.py

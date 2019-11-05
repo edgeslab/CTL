@@ -467,9 +467,9 @@ class CausalTree:
                 #     self.obj = self.obj - node.current_obj + best_tb_mse + best_fb_mse
 
                 tb = self.Node(current_obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
-                               treat_split=best_tb_split, node_mse=best_tb_mse)
+                               treat_split=best_tb_split, node_mse=best_tb_mse, node_depth=curr_depth)
                 fb = self.Node(current_obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
-                               treat_split=best_fb_split, node_mse=best_fb_mse)
+                               treat_split=best_fb_split, node_mse=best_fb_mse, node_depth=curr_depth)
 
                 node.true_branch = self.fit_r(set1, y1, treat1,
                                               curr_depth=curr_depth, node=tb,
@@ -1027,20 +1027,20 @@ class CausalTree:
                         # list_vars.append(to_append)
                         if to_append not in list_vars:
                             list_vars.append(to_append)
-                            list_depths.append(node.depth)
+                            list_depths.append(node.node_depth)
                     else:
                         # list_vars.append(node.feature_name)
                         if node.feature_name not in list_vars:
                             list_vars.append(node.feature_name)
-                            list_depths.append(node.depth)
+                            list_depths.append(node.node_depth)
                 else:
                     # list_vars.append(node.feature_name)
                     if node.feature_name not in list_vars:
                         list_vars.append(node.feature_name)
-                        list_depths.append(node.depth)
-                list_vars = get_variables_r(
+                        list_depths.append(node.node_depth)
+                list_vars, list_depths = get_variables_r(
                     node.true_branch, list_vars, list_of_depths)
-                list_vars = get_variables_r(
+                list_vars, list_depths = get_variables_r(
                     node.false_branch, list_vars, list_of_depths)
 
                 return list_vars, list_depths
