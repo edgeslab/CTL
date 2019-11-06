@@ -5,3 +5,8 @@ build/
 CTL.egg-info/
 dist/
 *egg-info/
+output/
+tree.dot
+tree.png
+test.py
+test_script.py
