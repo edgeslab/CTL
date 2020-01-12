@@ -823,13 +823,15 @@ class CausalTree:
                     node_str.append(font_color)
             else:
                 # effect_range = np.linspace(self.min, 0, 10)
-                effect_range = np.linspace(-1, 0, 10)
+                effect_range = np.linspace(-1, 0, 10)[::-1]
+                print(effect_range)
                 for idx, effect_r in enumerate(effect_range[:-1]):
                     # if effect_range[idx] >= effect >= effect_range[idx + 1]:
                     #         color = "\"/reds9/%i\"" % (idx + 1)
                     #         color_idx = idx
                     #         break
-                    if effect >= effect_range[idx] and effect >= effect_range[idx+1]:
+                    # if effect <= effect_range[idx] and effect >= effect_range[idx+1]:
+                    if effect_range[idx+1] <= effect <= effect_range[idx]:
                         color = "\"/reds9/%i\"" % (idx + 1)
                         color_idx = idx
                         break
@@ -856,7 +858,7 @@ class CausalTree:
         #     node_str.append(font_color)
         
         # ----------------------------------------------------------------
-        # p-value
+        # p-value highlighting
         # ----------------------------------------------------------------
 
         if node.p_val <= alpha:
@@ -882,7 +884,8 @@ class CausalTree:
             # f.write(str(curr_node) + ' -> ' + str(counter) +
             #         ' [labeldistance=2.5, labelangle=45, headlabel=' + decision + '];\n')
             counter = self.tree_to_dot_r(
-                node.true_branch, feat_names, f, counter, alpha=alpha, show_pval=show_pval)
+                node.true_branch, feat_names, f, counter, alpha=alpha, show_pval=show_pval, show_samples=show_samples,
+                show_effect=show_effect, trigger_precision=trigger_precision)
         if node.false_branch is not None:
             if curr_node == 0:
                 f.write(str(curr_node) + ' -> ' + str(counter) +
@@ -892,7 +895,8 @@ class CausalTree:
             # f.write(str(curr_node) + ' -> ' + str(counter) +
             #         ' [labeldistance=2.5, labelangle=45, headlabel=' + opp_decision + '];\n')
             counter = self.tree_to_dot_r(
-                node.false_branch, feat_names, f, counter, alpha=alpha, show_pval=show_pval)
+                node.false_branch, feat_names, f, counter, alpha=alpha, show_pval=show_pval, show_samples=show_samples,
+                show_effect=show_effect, trigger_precision=trigger_precision)
 
         return counter
 
