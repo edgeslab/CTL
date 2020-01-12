@@ -99,6 +99,10 @@ class CausalTree:
             self.node_mse = node_mse
 
     def fit(self, rows, labels, treatment):
+
+        if isinstance(labels[0], str):
+            labels = string_to_int(labels)
+
         if rows.shape[0] == 0:
             return self.Node()
 
@@ -107,6 +111,9 @@ class CausalTree:
 
         if self.verbose:
             self.start = time.time()
+
+        if not self.cont and len(np.unique(treatment)) > 2:
+            self.cont = True 
 
         curr_split = None
         current_var = 0.0
@@ -517,10 +524,6 @@ class CausalTree:
         if total_train == 0 or total_val == 0:
             return return_val
 
-        if isinstance(train_outcome[0], str):
-            train_outcome = string_to_int(train_outcome)
-            val_outcome = string_to_int(val_outcome)
-
         train_effect = ace(train_outcome, train_treatment)
         val_effect = ace(val_outcome, val_treatment)
 
@@ -567,10 +570,6 @@ class CausalTree:
             third_quartile = int(np.ceil(3 * unique_treatment.shape[0] / 4))
 
             unique_treatment = unique_treatment[first_quartile:third_quartile]
-
-        if isinstance(train_outcome[0], str):
-            train_outcome = string_to_int(train_outcome)
-            val_outcome = string_to_int(val_outcome)
 
         yyt = np.tile(train_outcome, (unique_treatment.shape[0], 1))
         ttt = np.tile(train_treatment, (unique_treatment.shape[0], 1))
@@ -648,7 +647,8 @@ class CausalTree:
 
         return best_obj, best_split, mse
 
-    def tree_to_dot(self, tree, feat_names, filename='tree', alpha=0.05, show_pval=True):
+    def tree_to_dot(self, tree, feat_names, filename='tree', alpha=0.05, show_pval=False, show_samples=False,
+                    show_effect=True):
         filename = filename + '.dot'
         feat_names = col_dict(feat_names)
         with open(filename, 'w') as f:
@@ -686,9 +686,6 @@ class CausalTree:
         if total == 0:
             return return_val
 
-        if isinstance(outcome[0], str):
-            outcome = string_to_int(outcome)
-
         treat_vect = treatment
 
         if treat_split is not None:
@@ -702,8 +699,8 @@ class CausalTree:
 
         return effect
 
-    def plot_tree(self, feat_names=None, training_data=None, file="tree", alpha=0.05, show_pval=True,
-                  create_png=True, extension="png", dpi=100):
+    def plot_tree(self, feat_names=None, training_data=None, file="tree", alpha=0.05, show_pval=False,
+                  create_png=True, extension="png", dpi=100, show_samples=False, show_effect=True):
 
         if feat_names is None:
             if training_data is not None:
@@ -728,24 +725,25 @@ class CausalTree:
             dot_file_name = dot_folder + file_name
             img_file_name = file
             self.tree_to_dot(self.root, feat_names, dot_file_name,
-                             alpha=alpha, show_pval=show_pval)
+                             alpha=alpha, show_pval=show_pval, show_samples=show_samples, show_effect=show_effect)
             if create_png:
                 self.dot_to_png(dot_file_name, img_file_name,
                                 extension=extension, dpi=dpi)
         else:
             self.tree_to_dot(self.root, feat_names, file,
-                             alpha=alpha, show_pval=show_pval)
+                             alpha=alpha, show_pval=show_pval, show_samples=show_samples, show_effect=show_effect)
             if create_png:
                 self.dot_to_png(file, extension=extension, dpi=dpi)
 
-    def tree_to_dot_r(self, node, feat_names, f, counter, alpha=0.05, show_pval=True):
+    def tree_to_dot_r(self, node, feat_names, f, counter, alpha=0.05, show_pval=True, show_samples=False):
         curr_node = counter
         f.write(str(counter) + ' ')
         f.write('[')
         node_str = list(['label=\"'])
 
         # number of samples
-        node_str.append('samples = ')
+        if show_samples:
+            node_str.append('samples = ')
         node_str.append(str(node.samples))
 
         # add entropy/ATE here
@@ -789,24 +787,66 @@ class CausalTree:
 
         node_str.append('\"')
 
+        # ----------------------------------------------------------------
+        # Color fill
+        # ----------------------------------------------------------------
         node_str.append(", style=filled")
-        effect_range = np.linspace(self.min, self.max, 10)
-        effect = node.effect
+
         color = '\"#ffffff\"'
         color_idx = 0
-        for idx, effect_r in enumerate(effect_range[:-1]):
-            if effect_range[idx] <= effect <= effect_range[idx + 1]:
-                color = "\"/blues9/%i\"" % (idx + 1)
-                color_idx = idx
-                break
+        effect = node.effect
+        eps = 0.01
+        if np.abs(effect) <= eps:
+            color = "white"
+        else:
+            if effect > 0:
+                # effect_range = np.linspace(0, self.max, 10)
+                effect_range = np.linspace(0, 1, 10)
+                for idx, effect_r in enumerate(effect_range[:-1]):
+                    if effect_range[idx] <= effect <= effect_range[idx + 1]:
+                            color = "\"/blues9/%i\"" % (idx + 1)
+                            color_idx = idx
+                            break
+                if color_idx >= 8:
+                    font_color = ", fontcolor=white"
+                    node_str.append(font_color)
+            else:
+                # effect_range = np.linspace(self.min, 0, 10)
+                effect_range = np.linspace(-1, 0, 10)
+                for idx, effect_r in enumerate(effect_range[:-1]):
+                    # if effect_range[idx] >= effect >= effect_range[idx + 1]:
+                    #         color = "\"/reds9/%i\"" % (idx + 1)
+                    #         color_idx = idx
+                    #         break
+                    if effect >= effect_range[idx] and effect >= effect_range[idx+1]:
+                        color = "\"/reds9/%i\"" % (idx + 1)
+                        color_idx = idx
+                        break
+                if color_idx >= 8:
+                    font_color = ", fontcolor=white"
+                    node_str.append(font_color)
+
+        # effect_range = np.linspace(self.min, self.max, 10)
+        # effect = node.effect
+        # color = '\"#ffffff\"'
+        # color_idx = 0
+        # for idx, effect_r in enumerate(effect_range[:-1]):
+        #     if effect_range[idx] <= effect <= effect_range[idx + 1]:
+        #         color = "\"/blues9/%i\"" % (idx + 1)
+        #         color_idx = idx
+        #         break
 
         color_str = ", fillcolor=" + color
         node_str.append(color_str)
-        # node_str.append("style=filled, color=\"/blues3/2\"")
 
-        if color_idx >= 7:
-            font_color = ", fontcolor=white"
-            node_str.append(font_color)
+        # # node_str.append("style=filled, color=\"/blues3/2\"")
+        # if color_idx >= 7:
+        #     font_color = ", fontcolor=white"
+        #     node_str.append(font_color)
+        
+        # ----------------------------------------------------------------
+        # p-value
+        # ----------------------------------------------------------------
 
         if node.p_val <= alpha:
             # node_str.append(", shape=box")
@@ -818,14 +858,16 @@ class CausalTree:
         node_str.append('] ;\n')
         f.write(''.join(node_str))
 
+        # ----------------------------------------------------------------
         # start doing the branches
+        # ----------------------------------------------------------------
         counter = counter + 1
         if node.true_branch is not None:
             if curr_node == 0:
                 f.write(str(curr_node) + ' -> ' + str(counter) +
-                        ' [labeldistance=2.5, labelangle=45, headlabel=\"True\"] ;\n')
+                        ' [labeldistance=2.5, labelangle=45, headlabel=\"True\", color=green, penwidth=2] ;\n')
             else:
-                f.write(str(curr_node) + ' -> ' + str(counter) + ' ;\n')
+                f.write(str(curr_node) + ' -> ' + str(counter) + '[color=green, penwidth=2] ;\n')
             # f.write(str(curr_node) + ' -> ' + str(counter) +
             #         ' [labeldistance=2.5, labelangle=45, headlabel=' + decision + '];\n')
             counter = self.tree_to_dot_r(
@@ -833,9 +875,9 @@ class CausalTree:
         if node.false_branch is not None:
             if curr_node == 0:
                 f.write(str(curr_node) + ' -> ' + str(counter) +
-                        ' [labeldistance=2.5, labelangle=-45, headlabel=\"False\"] ;\n')
+                        ' [labeldistance=2.5, labelangle=-45, headlabel=\"False\", color=red, penwidth=2] ;\n')
             else:
-                f.write(str(curr_node) + ' -> ' + str(counter) + ' ;\n')
+                f.write(str(curr_node) + ' -> ' + str(counter) + '[color=red, penwidth=2] ;\n')
             # f.write(str(curr_node) + ' -> ' + str(counter) +
             #         ' [labeldistance=2.5, labelangle=45, headlabel=' + opp_decision + '];\n')
             counter = self.tree_to_dot_r(

@@ -77,9 +77,6 @@ def tau_squared_cont(outcome, treatment, min_size=1, quartile=False):
 
     unique_treatment = (unique_treatment[1:] + unique_treatment[:-1]) / 2
 
-    if isinstance(outcome[0], str):
-        outcome = string_to_int(outcome)
-
     yy = np.tile(outcome, (unique_treatment.shape[0], 1))
     tt = np.tile(treatment, (unique_treatment.shape[0], 1))
 
@@ -124,9 +121,6 @@ def tau_squared(outcome, treatment, treat_split=None):
 
     if total == 0:
         return return_val
-
-    if isinstance(outcome[0], str):
-        outcome = string_to_int(outcome)
 
     treat_vect = treatment
 
@@ -261,9 +255,6 @@ def variance(y, treatment, treat_split=None):
 
     if y.shape[0] == 0:
         return np.array([np.inf, np.inf])
-
-    if isinstance(y[0], str):
-        y = string_to_int(y)
 
     yt = y[treat]
     yc = y[control]
