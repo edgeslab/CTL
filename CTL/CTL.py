@@ -648,7 +648,7 @@ class CausalTree:
         return best_obj, best_split, mse
 
     def tree_to_dot(self, tree, feat_names, filename='tree', alpha=0.05, show_pval=False, show_samples=False,
-                    show_effect=True):
+                    show_effect=True, trigger_precision=4):
         filename = filename + '.dot'
         feat_names = col_dict(feat_names)
         with open(filename, 'w') as f:
@@ -656,7 +656,8 @@ class CausalTree:
             f.write('node [shape=box, fontsize=32] ;\n')
             f.write('edge [fontsize=24] ;\n')
             self.tree_to_dot_r(tree, feat_names, f, counter=0,
-                               alpha=alpha, show_pval=show_pval)
+                               alpha=alpha, show_pval=show_pval, show_samples=show_samples, show_effect=show_effect,
+                               trigger_precision=trigger_precision)
             f.write("}")
 
     @staticmethod
@@ -700,7 +701,8 @@ class CausalTree:
         return effect
 
     def plot_tree(self, feat_names=None, training_data=None, file="tree", alpha=0.05, show_pval=False,
-                  create_png=True, extension="png", dpi=100, show_samples=False, show_effect=True):
+                  create_png=True, extension="png", dpi=100, show_samples=False, show_effect=True,
+                  trigger_precision=4):
 
         if feat_names is None:
             if training_data is not None:
@@ -725,17 +727,20 @@ class CausalTree:
             dot_file_name = dot_folder + file_name
             img_file_name = file
             self.tree_to_dot(self.root, feat_names, dot_file_name,
-                             alpha=alpha, show_pval=show_pval, show_samples=show_samples, show_effect=show_effect)
+                             alpha=alpha, show_pval=show_pval, show_samples=show_samples, show_effect=show_effect,
+                             trigger_precision=trigger_precision)
             if create_png:
                 self.dot_to_png(dot_file_name, img_file_name,
                                 extension=extension, dpi=dpi)
         else:
             self.tree_to_dot(self.root, feat_names, file,
-                             alpha=alpha, show_pval=show_pval, show_samples=show_samples, show_effect=show_effect)
+                             alpha=alpha, show_pval=show_pval, show_samples=show_samples, show_effect=show_effect,
+                             trigger_precision=trigger_precision)
             if create_png:
                 self.dot_to_png(file, extension=extension, dpi=dpi)
 
-    def tree_to_dot_r(self, node, feat_names, f, counter, alpha=0.05, show_pval=True, show_samples=False):
+    def tree_to_dot_r(self, node, feat_names, f, counter, alpha=0.05, show_pval=True, show_samples=False,
+                      show_effect=True, trigger_precision=4):
         curr_node = counter
         f.write(str(counter) + ' ')
         f.write('[')
@@ -746,10 +751,11 @@ class CausalTree:
             node_str.append('samples = ')
         node_str.append(str(node.samples))
 
-        # add entropy/ATE here
-        node_str.append('\\neffect = ')
-        ace_str = '%.3f' % node.effect
-        node_str.append(ace_str)
+        # add effect
+        if show_effect:
+            node_str.append('\\neffect = ')
+            ace_str = '%.3f' % node.effect
+            node_str.append(ace_str)
 
         # p_values
         if show_pval:
@@ -757,13 +763,18 @@ class CausalTree:
             p_val_str = '%.3f' % node.p_val
             node_str.append(p_val_str)
 
+        # ----------------------------------------------------------------
+        # Triggers
+        # ----------------------------------------------------------------
         if node.treat_split is not None:
-            if curr_node == 0:
-                node_str.append('\\nTrigger: ')
-                node_str.append('trigger > ')
-            else:
-                node_str.append('\\ntrigger > ')
-            treat_str = '%s' % node.treat_split
+            # if curr_node == 0:
+            #     node_str.append('\\nTrigger: ')
+            #     node_str.append('trigger > ')
+            # else:
+            #     node_str.append('\\ntrigger > ')
+            node_str.append('\\ntrigger > ')
+            # treat_str = '{%s}' % node.treat_split
+            treat_str = "{1:.{0}f}".format(trigger_precision, node.treat_split)
             node_str.append(treat_str)
 
         if not node.leaf:

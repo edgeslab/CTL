@@ -43,7 +43,7 @@ cthv_predict = cthv.predict(x_test)
 
 print(ctl_predict)
 
-cthv.plot_tree(feat_names=columns, file="output/bin_tree")
+cthv.plot_tree(feat_names=columns, file="output/bin_tree", show_effect=False)
 
 # if you want to plot a tree
 # ctl.plot_tree(training_data=x_train)

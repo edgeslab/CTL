@@ -31,10 +31,10 @@ cthv = CausalTree(cont=True, val_honest=True)
 cthv.fit(x_train, y_train, treat_train)
 cthv_predict, groups, triggers, features = cthv.predict(x_test, return_groups=True, return_features=True, variables=variable_names)
 
-print(cthv_predict)
+# print(cthv_predict)
 
-for i in range(len(features)):
-    print(groups[i], features[i])
+# for i in range(len(features)):
+#     print(groups[i], features[i])
 
 # if you want to plot a tree
 cthv.plot_tree(training_data=x_train, file="output/tree")
