@@ -9,6 +9,7 @@ class CausalTree:
     """
     A class for the Causal Tree
     """
+
     def __init__(self, cont=False, max_depth=-1, min_size=2, weight=0.5, seed=None, split_size=0.5, honest=False,
                  val_honest=False, variables=None, weight_obj=False, base_obj=True, quartile=False, verbose=False,
                  max_values=None):
@@ -74,7 +75,7 @@ class CausalTree:
     class Node:
         def __init__(self, col=-1, value=None, true_branch=None, false_branch=None, effect=0.0,
                      treat_split=None, leaf=False, leaf_num=None, current_obj=0.0, p_val=-1, samples=0, node_var=0.0,
-                     node_depth=0, node_mse=0.0):
+                     node_depth=0, node_mse=0.0, control_mean=0.0, treatment_mean=0.0):
             self.col = col  # the column of the feature used for splitting
             self.value = value  # the value that splits the data
 
@@ -98,6 +99,9 @@ class CausalTree:
             self.node_depth = node_depth
             self.node_mse = node_mse
 
+            self.control_mean = control_mean
+            self.treatment_mean = treatment_mean
+
     def fit(self, rows, labels, treatment):
 
         if isinstance(labels[0], str):
@@ -113,7 +117,7 @@ class CausalTree:
             self.start = time.time()
 
         if not self.cont and len(np.unique(treatment)) > 2:
-            self.cont = True 
+            self.cont = True
 
         curr_split = None
         current_var = 0.0
@@ -179,15 +183,36 @@ class CausalTree:
 
         if self.honest:
             rows, est_rows, labels, est_labels, treatment, est_treatment = \
-                train_test_split(rows, labels, treatment,
-                                 shuffle=True, test_size=0.5)
+                train_test_split(rows, labels, treatment, shuffle=True, test_size=0.5)
+
+            # ----------------------------------------------------------------
+            # Adding control/treatment means
+            # ----------------------------------------------------------------
+            if self.cont:
+                control_mean = float(np.mean(est_labels[est_treatment <= curr_split]))
+                treatment_mean = float(np.mean(est_labels[est_treatment > curr_split]))
+            else:
+                control_mean = float(np.mean(est_labels[est_treatment == 0]))
+                treatment_mean = float(np.mean(est_labels[est_treatment == 1]))
+
             self.root = self.Node(col=-1, value=None, current_obj=0.0, effect=effect,
-                                  p_val=p_val, treat_split=curr_split, node_var=current_var, node_depth=0)
+                                  p_val=p_val, treat_split=curr_split, node_var=current_var, node_depth=0,
+                                  control_mean=control_mean, treatment_mean=treatment_mean)
             self.root = self.fit_r(rows, labels, treatment, curr_depth=0, node=self.root,
                                    est_rows=est_rows, est_labels=est_labels, est_treatment=est_treatment)
         else:
+            # ----------------------------------------------------------------
+            # Adding control/treatment means
+            # ----------------------------------------------------------------
+            if self.cont:
+                control_mean = float(np.mean(labels[treatment <= curr_split]))
+                treatment_mean = float(np.mean(labels[treatment > curr_split]))
+            else:
+                control_mean = float(np.mean(labels[treatment == 0]))
+                treatment_mean = float(np.mean(labels[treatment == 1]))
             self.root = self.Node(col=-1, value=None, current_obj=0.0, effect=effect,
-                                  p_val=p_val, treat_split=curr_split, node_depth=0)
+                                  p_val=p_val, treat_split=curr_split, node_depth=0,
+                                  control_mean=control_mean, treatment_mean=treatment_mean)
             self.root = self.fit_r(
                 rows, labels, treatment, curr_depth=0, node=self.root)
 
@@ -647,8 +672,8 @@ class CausalTree:
 
         return best_obj, best_split, mse
 
-    def tree_to_dot(self, tree, feat_names, filename='tree', alpha=0.05, show_pval=False, show_samples=False,
-                    show_effect=True, trigger_precision=4):
+    def tree_to_dot(self, tree, feat_names, filename='tree', alpha=0.05, show_pval=False, show_samples=True,
+                    show_effect=True, trigger_precision=2):
         filename = filename + '.dot'
         feat_names = col_dict(feat_names)
         with open(filename, 'w') as f:
@@ -701,8 +726,8 @@ class CausalTree:
         return effect
 
     def plot_tree(self, feat_names=None, training_data=None, file="tree", alpha=0.05, show_pval=False,
-                  create_png=True, extension="png", dpi=100, show_samples=False, show_effect=True,
-                  trigger_precision=4):
+                  create_png=True, extension="png", dpi=100, show_samples=True, show_effect=True,
+                  trigger_precision=2):
 
         if feat_names is None:
             if training_data is not None:
@@ -739,29 +764,18 @@ class CausalTree:
             if create_png:
                 self.dot_to_png(file, extension=extension, dpi=dpi)
 
-    def tree_to_dot_r(self, node, feat_names, f, counter, alpha=0.05, show_pval=True, show_samples=False,
-                      show_effect=True, trigger_precision=4):
+    def tree_to_dot_r(self, node, feat_names, f, counter, alpha=0.05, show_pval=True, show_samples=True,
+                      show_effect=True, trigger_precision=2):
         curr_node = counter
         f.write(str(counter) + ' ')
         f.write('[')
         node_str = list(['label=\"'])
 
-        # number of samples
-        if show_samples:
-            node_str.append('samples = ')
-        node_str.append(str(node.samples))
-
         # add effect
         if show_effect:
-            node_str.append('\\neffect = ')
+            node_str.append('effect = ')
             ace_str = '%.3f' % node.effect
             node_str.append(ace_str)
-
-        # p_values
-        if show_pval:
-            node_str.append('\\np = ')
-            p_val_str = '%.3f' % node.p_val
-            node_str.append(p_val_str)
 
         # ----------------------------------------------------------------
         # Triggers
@@ -777,6 +791,22 @@ class CausalTree:
             treat_str = "{1:.{0}f}".format(trigger_precision, node.treat_split)
             node_str.append(treat_str)
 
+        # p_values
+        if show_pval:
+            node_str.append('\\np = ')
+            p_val_str = '%.3f' % node.p_val
+            node_str.append(p_val_str)
+
+        # ----------------------------------------------------------------
+        # Number of samples
+        # ----------------------------------------------------------------
+        if show_samples:
+            node_str.append('\\nsamples = ')
+            node_str.append(str(node.samples))
+
+        # ----------------------------------------------------------------
+        # Feature split
+        # ----------------------------------------------------------------
         if not node.leaf:
             sz_col = 'Column %s' % node.col
             if feat_names and sz_col in feat_names:
@@ -796,6 +826,9 @@ class CausalTree:
             #     node_str.append('Splitting feature: ')
             node_str.append('\\n' + decision + '\\n')
 
+        # ----------------------------------------------------------------
+        # The end
+        # ----------------------------------------------------------------
         node_str.append('\"')
 
         # ----------------------------------------------------------------
@@ -815,23 +848,22 @@ class CausalTree:
                 effect_range = np.linspace(0, 1, 10)
                 for idx, effect_r in enumerate(effect_range[:-1]):
                     if effect_range[idx] <= effect <= effect_range[idx + 1]:
-                            color = "\"/blues9/%i\"" % (idx + 1)
-                            color_idx = idx
-                            break
+                        color = "\"/blues9/%i\"" % (idx + 1)
+                        color_idx = idx
+                        break
                 if color_idx >= 8:
                     font_color = ", fontcolor=white"
                     node_str.append(font_color)
             else:
                 # effect_range = np.linspace(self.min, 0, 10)
                 effect_range = np.linspace(-1, 0, 10)[::-1]
-                print(effect_range)
                 for idx, effect_r in enumerate(effect_range[:-1]):
                     # if effect_range[idx] >= effect >= effect_range[idx + 1]:
                     #         color = "\"/reds9/%i\"" % (idx + 1)
                     #         color_idx = idx
                     #         break
                     # if effect <= effect_range[idx] and effect >= effect_range[idx+1]:
-                    if effect_range[idx+1] <= effect <= effect_range[idx]:
+                    if effect_range[idx + 1] <= effect <= effect_range[idx]:
                         color = "\"/reds9/%i\"" % (idx + 1)
                         color_idx = idx
                         break
@@ -856,7 +888,7 @@ class CausalTree:
         # if color_idx >= 7:
         #     font_color = ", fontcolor=white"
         #     node_str.append(font_color)
-        
+
         # ----------------------------------------------------------------
         # p-value highlighting
         # ----------------------------------------------------------------
@@ -865,8 +897,8 @@ class CausalTree:
             # node_str.append(", shape=box")
             # node_str.append(", sides=4")
             # node_str.append(", peripheries=3")
-            node_str.append(", color=red")
-            node_str.append(", penwidth=3.0")
+            node_str.append(", color=purple")
+            node_str.append(", penwidth=10.0")
 
         node_str.append('] ;\n')
         f.write(''.join(node_str))
