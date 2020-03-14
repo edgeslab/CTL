@@ -132,8 +132,13 @@ class CausalTree:
                         train_test_split(rows, labels, treatment,
                                          shuffle=True, test_size=0.5)
 
-                _, effect = tau_squared(est_labels, est_treatment)
-                p_val = get_pval(est_labels, est_treatment)
+                # ----------------------------------------------------------------
+                # 2020-03-14
+                # ----------------------------------------------------------------
+                # _, effect = tau_squared(est_labels, est_treatment)
+                # p_val = get_pval(est_labels, est_treatment)
+                _, effect = tau_squared(labels, treatment)
+                p_val = get_pval(labels, treatment)
 
                 train_to_est_ratio = est_rows.shape[0] / train_rows.shape[0]
                 current_var_treat, current_var_control = variance(
@@ -157,9 +162,17 @@ class CausalTree:
 
                 _, _, curr_split = tau_squared_cont(
                     train_outcome, train_treat, self.min_size, self.quartile)
+
+                # ----------------------------------------------------------------
+                # 2020-03-14
+                # ----------------------------------------------------------------
+                # _, effect = tau_squared(
+                #     est_labels, est_treatment, treat_split=curr_split)
+                # p_val = get_pval(est_labels, est_treatment,
+                #                  treat_split=curr_split)
                 _, effect = tau_squared(
-                    est_labels, est_treatment, treat_split=curr_split)
-                p_val = get_pval(est_labels, est_treatment,
+                    labels, treatment, treat_split=curr_split)
+                p_val = get_pval(labels, treatment,
                                  treat_split=curr_split)
 
                 train_to_est_ratio = est_rows.shape[0] / train_rows.shape[0]
@@ -228,13 +241,21 @@ class CausalTree:
 
         if self.val_honest:
             train_to_est_ratio = val_rows.shape[0] / train_rows.shape[0]
-            node.samples = val_rows.shape[0]
+            # ----------------------------------------------------------------
+            # 2020-03-14
+            # ----------------------------------------------------------------
+            # node.samples = val_rows.shape[0]
+            node.samples = labels.shape[0]
         elif self.honest:
             train_to_est_ratio = est_rows.shape[0] / rows.shape[0]
             node.samples = est_rows.shape[0]
         else:
             train_to_est_ratio = -1
-            node.samples = train_rows.shape[0]
+            # ----------------------------------------------------------------
+            # 2020-03-14
+            # ----------------------------------------------------------------
+            # node.samples = train_rows.shape[0]
+            node.samples = labels.shape[0]
 
         if curr_depth > self.tree_depth:
             self.tree_depth = curr_depth
@@ -413,10 +434,18 @@ class CausalTree:
                     (use_set1, use_set2, use_y1, use_y2, use_treat1, use_treat2) \
                         = divide_set(train_rows, train_outcome, train_treat, node.col, node.value)
 
-                best_tb_effect = self.effect(use_y1, use_treat1)
-                best_fb_effect = self.effect(use_y2, use_treat2)
-                tb_p_val = get_pval(use_y1, use_treat1)
-                fb_p_val = get_pval(use_y2, use_treat2)
+                # ----------------------------------------------------------------
+                # 2020-03-14
+                # ----------------------------------------------------------------
+                best_tb_effect = self.effect(y1, treat1)
+                best_fb_effect = self.effect(y2, treat2)
+                tb_p_val = get_pval(y1, treat1)
+                fb_p_val = get_pval(y2, treat2)
+                if self.honest:
+                    best_tb_effect = self.effect(use_y1, use_treat1)
+                    best_fb_effect = self.effect(use_y2, use_treat2)
+                    tb_p_val = get_pval(use_y1, use_treat1)
+                    fb_p_val = get_pval(use_y2, use_treat2)
 
                 self.obj = self.obj - (node.current_obj - node.variance) + (best_tb_obj + best_fb_obj -
                                                                             best_tb_var - best_fb_var)
@@ -482,14 +511,22 @@ class CausalTree:
                     (use_set1, use_set2, use_y1, use_y2, use_treat1, use_treat2) \
                         = divide_set(train_rows, train_outcome, train_treat, node.col, node.value)
 
-                best_tb_effect = self.effect(
-                    use_y1, use_treat1, treat_split=best_tb_split)
-                best_fb_effect = self.effect(
-                    use_y2, use_treat2, treat_split=best_fb_split)
-                tb_p_val = get_pval(use_y1, use_treat1,
-                                    treat_split=best_tb_split)
-                fb_p_val = get_pval(use_y2, use_treat2,
-                                    treat_split=best_fb_split)
+                # ----------------------------------------------------------------
+                # 2020-03-14
+                # ----------------------------------------------------------------
+                best_tb_effect = self.effect(y1, treat1, treat_split=best_tb_split)
+                best_fb_effect = self.effect(y2, treat2, treat_split=best_fb_split)
+                tb_p_val = get_pval(y1, treat1, treat_split=best_tb_split)
+                fb_p_val = get_pval(y2, treat2, treat_split=best_fb_split)
+                if self.honest:
+                    best_tb_effect = self.effect(
+                        use_y1, use_treat1, treat_split=best_tb_split)
+                    best_fb_effect = self.effect(
+                        use_y2, use_treat2, treat_split=best_fb_split)
+                    tb_p_val = get_pval(use_y1, use_treat1,
+                                        treat_split=best_tb_split)
+                    fb_p_val = get_pval(use_y2, use_treat2,
+                                        treat_split=best_fb_split)
 
                 self.obj = self.obj - (node.current_obj - node.variance) + (best_tb_obj + best_fb_obj -
                                                                             best_tb_var - best_fb_var)
