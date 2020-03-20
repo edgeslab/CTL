@@ -194,7 +194,7 @@ class CausalTree:
         if self.seed is not None:
             np.random.seed(self.seed)
 
-        if self.honest:
+        if self.honest and not self.val_honest:
             rows, est_rows, labels, est_labels, treatment, est_treatment = \
                 train_test_split(rows, labels, treatment, shuffle=True, test_size=0.5)
 
@@ -632,6 +632,15 @@ class CausalTree:
             third_quartile = int(np.ceil(3 * unique_treatment.shape[0] / 4))
 
             unique_treatment = unique_treatment[first_quartile:third_quartile]
+
+        if self.max_values < 1:
+            idx = np.round(np.linspace(
+                0, len(unique_treatment) - 1, self.max_values * len(unique_treatment))).astype(int)
+            unique_treatment = unique_treatment[idx]
+        else:
+            idx = np.round(np.linspace(
+                0, len(unique_treatment) - 1, self.max_values)).astype(int)
+            unique_treatment = unique_treatment[idx]
 
         yyt = np.tile(train_outcome, (unique_treatment.shape[0], 1))
         ttt = np.tile(train_treatment, (unique_treatment.shape[0], 1))
@@ -1182,6 +1191,17 @@ class CausalTree:
             sorted_vars.append(list_of_vars[i])
 
         return sorted_vars
+
+    def save_pickle(self, filename):
+        import pickle as pkl
+
+        if ".pkl" not in filename:
+            filename = filename + ".pkl"
+
+        check_dir(filename)
+
+        with open(filename, "wb") as file:
+            pkl.dump(self, file)
 
 
 def grid_search(features, labels, treatment, weights=None, split_sizes=None, cont=None, opt_obj="obj", base_obj=True,
