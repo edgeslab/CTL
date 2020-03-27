@@ -41,6 +41,7 @@ cthv = CausalTree(val_honest=True)
 cthv.fit(x_train, y_train, treat_train)
 cthv_predict = cthv.predict(x_test)
 
+print(ctl.tree_depth)
 print(ctl_predict)
 
 cthv.plot_tree(feat_names=columns, file="output/bin_tree", show_effect=True)

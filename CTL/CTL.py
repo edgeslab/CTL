@@ -419,8 +419,7 @@ class CausalTree:
 
                 (set1, set2, y1, y2, treat1, treat2) = divide_set(
                     rows, labels, treatment, node.col, node.value)
-                est_set1, est_set2, est_y1, est_y2, est_treat1, est_treat2 = [
-                                                                                 0] * 6
+                est_set1, est_set2, est_y1, est_y2, est_treat1, est_treat2 = [0] * 6
 
                 if self.val_honest:
                     (use_set1, use_set2, use_y1, use_y2, use_treat1, use_treat2) \
