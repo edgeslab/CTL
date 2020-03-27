@@ -1,7 +1,7 @@
-from CTL.causal_tree import *
+from CTL.causal_trigger_tree import *
 
 
-class BaseNode(Node):
+class TriggerBaseNode(TriggerNode):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -12,11 +12,11 @@ class BaseNode(Node):
 # ----------------------------------------------------------------
 # Base causal tree (binary, base objective)
 # ----------------------------------------------------------------
-class CausalTreeLearnBase(CausalTree):
+class TriggerTreeBase(TriggerTree):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.root = BaseNode()
+        self.root = TriggerBaseNode()
 
     def fit(self, x, y, t):
         if x.shape[0] == 0:
@@ -40,10 +40,11 @@ class CausalTreeLearnBase(CausalTree):
         # ----------------------------------------------------------------
         # effect and pvals
         # ----------------------------------------------------------------
-        _, effect = tau_squared(y, t)
+        _, effect, trigger = tau_squared_trigger(y, t)
         p_val = get_pval(y, t)
         self.root.effect = effect
         self.root.p_val = p_val
+        self.root.trigger = trigger
 
         # ----------------------------------------------------------------
         # Not sure if i should eval in root or not
@@ -61,7 +62,7 @@ class CausalTreeLearnBase(CausalTree):
 
         self._fit(self.root, train_x, train_y, train_t, val_x, val_y, val_t)
 
-    def _fit(self, node: BaseNode, train_x, train_y, train_t, val_x, val_y, val_t):
+    def _fit(self, node: TriggerBaseNode, train_x, train_y, train_t, val_x, val_y, val_t):
 
         if train_x.shape[0] == 0 or val_x.shape[0] == 0:
             return node
@@ -142,10 +143,10 @@ class CausalTreeLearnBase(CausalTree):
                 # Ignore "mse" here, come back to it later?
                 # ----------------------------------------------------------------
 
-                tb = BaseNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val, node_depth=node.node_depth + 1,
-                              num_samples=y1.shape[0])
-                fb = BaseNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val, node_depth=node.node_depth + 1,
-                              num_samples=y2.shape[0])
+                tb = TriggerBaseNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val, node_depth=node.node_depth + 1,
+                                     num_samples=y1.shape[0])
+                fb = TriggerBaseNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val, node_depth=node.node_depth + 1,
+                                     num_samples=y2.shape[0])
 
                 node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1)
                 node.false_branch = self._fit(fb, train_x2, train_y2, train_t2, val_x2, val_y2, val_t2)
@@ -169,21 +170,33 @@ class CausalTreeLearnBase(CausalTree):
                 return node
 
     def _eval(self, train_y, train_t, val_y, val_t):
+        """Continuous case"""
         total_train = train_y.shape[0]
         total_val = val_y.shape[0]
 
-        return_val = (-np.inf, -np.inf)
+        return_val = (-np.inf, -np.inf, -np.inf)
 
         if total_train == 0 or total_val == 0:
             return return_val
 
-        train_effect = ace(train_y, train_t)
-        val_effect = ace(val_y, val_t)
+        unique_treatment = np.unique(train_t)
 
-        train_mse = (1 - self.weight) * total_train * (train_effect ** 2)
-        cost = self.weight * total_val * np.abs(train_effect - val_effect)
+        if unique_treatment.shape[0] == 1:
+            return return_val
 
-        obj = (train_mse - cost) / (np.abs(total_train - total_val) + 1)
-        mse = total_train * (train_effect ** 2)
+        unique_treatment = (unique_treatment[1:] + unique_treatment[:-1]) / 2
 
-        return obj, mse
+        if self.quartile:
+            first_quartile = int(np.floor(unique_treatment.shape[0] / 4))
+            third_quartile = int(np.ceil(3 * unique_treatment.shape[0] / 4))
+
+            unique_treatment = unique_treatment[first_quartile:third_quartile]
+
+        if self.max_values < 1:
+            idx = np.round(np.linspace(
+                0, len(unique_treatment) - 1, self.max_values * len(unique_treatment))).astype(int)
+            unique_treatment = unique_treatment[idx]
+        else:
+            idx = np.round(np.linspace(
+                0, len(unique_treatment) - 1, self.max_values)).astype(int)
+            unique_treatment = unique_treatment[idx]

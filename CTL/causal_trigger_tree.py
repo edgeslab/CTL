@@ -4,16 +4,18 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 
-class Node(ABC):
+class TriggerNode(ABC):
 
     def __init__(self, p_val=1.0, effect=0.0, node_depth=0, control_mean=0.0, treatment_mean=0.0, col=-1, value=-1,
-                 is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0):
+                 is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0, trigger=0.0):
         # not tree specific features (most likely added at creation)
         self.p_val = p_val
         self.effect = effect
         self.node_depth = node_depth
         self.control_mean = control_mean
         self.treatment_mean = treatment_mean
+
+        self.trigger = trigger
 
         # during tree building
         self.obj = obj
@@ -28,14 +30,16 @@ class Node(ABC):
         self.false_branch = None
 
 
-class CausalTree(ABC):
+class TriggerTree(ABC):
 
-    def __init__(self, weight=0.5, val_split=0.5, max_depth=-1, min_size=2, seed=724):
+    def __init__(self, weight=0.5, val_split=0.5, max_depth=-1, min_size=2, quartile=False, seed=724):
         self.weight = weight
         self.val_split = val_split
         self.max_depth = max_depth
         self.min_size = min_size
         self.seed = seed
+
+        self.quartile = quartile
 
         self.obj = 0.0
 
@@ -48,7 +52,7 @@ class CausalTree(ABC):
         self.tree_depth = 0
         self.num_leaves = 0
 
-        self.root = Node()
+        self.root = TriggerNode()
 
     @abstractmethod
     def fit(self, x, y, t):
@@ -56,7 +60,7 @@ class CausalTree(ABC):
 
     def predict(self, x):
 
-        def _predict(node: Node, observation):
+        def _predict(node: TriggerNode, observation):
             if node.is_leaf:
                 return node.effect
             else:
@@ -84,7 +88,7 @@ class CausalTree(ABC):
 
     def prune(self, alpha=0.05):
 
-        def _prune(node: Node):
+        def _prune(node: TriggerNode):
             if node.true_branch is None or node.false_branch is None:
                 return
 

@@ -47,6 +47,59 @@ def tau_squared(y, t):
     return err, effect
 
 
+def tau_squared_trigger(outcome, treatment, min_size=1, quartile=False):
+    """Continuous case"""
+    total = outcome.shape[0]
+
+    return_val = (-np.inf, -np.inf, -np.inf)
+
+    if total == 0:
+        return return_val
+
+    unique_treatment = np.unique(treatment)
+
+    if unique_treatment.shape[0] == 1:
+        return return_val
+
+    unique_treatment = (unique_treatment[1:] + unique_treatment[:-1]) / 2
+
+    yy = np.tile(outcome, (unique_treatment.shape[0], 1))
+    tt = np.tile(treatment, (unique_treatment.shape[0], 1))
+
+    x = np.transpose(np.transpose(tt) > unique_treatment)
+
+    tt[x] = 1
+    tt[np.logical_not(x)] = 0
+
+    treat_num = np.sum(tt == 1, axis=1)
+    cont_num = np.sum(tt == 0, axis=1)
+    min_size_idx = np.where(np.logical_and(
+        treat_num >= min_size, cont_num >= min_size))
+
+    unique_treatment = unique_treatment[min_size_idx]
+    tt = tt[min_size_idx]
+    yy = yy[min_size_idx]
+
+    if tt.shape[0] == 0:
+        return return_val
+
+    y_t_m = np.sum((yy * (tt == 1)), axis=1) / np.sum(tt == 1, axis=1)
+    y_c_m = np.sum((yy * (tt == 0)), axis=1) / np.sum(tt == 0, axis=1)
+
+    effect = y_t_m - y_c_m
+    err = effect ** 2
+
+    max_err = np.argmax(err)
+
+    best_effect = effect[max_err]
+    best_err = err[max_err]
+    best_split = unique_treatment[max_err]
+
+    best_err = total * best_err
+
+    return best_err, best_effect, best_split
+
+
 def ace(y, t):
     treat = t == 1
     control = t == 0
