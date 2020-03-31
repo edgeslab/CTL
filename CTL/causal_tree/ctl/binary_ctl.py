@@ -1,21 +1,19 @@
-from CTL.util import *
-from sklearn.model_selection import train_test_split
+from CTL.causal_tree.util import *
+from CTL.causal_tree.causal_tree import *
 import numpy as np
-from abc import ABC, abstractmethod
 
 
-class TriggerNode(ABC):
+class CausalTreeLearnNode(CausalTreeNode):
 
     def __init__(self, p_val=1.0, effect=0.0, node_depth=0, control_mean=0.0, treatment_mean=0.0, col=-1, value=-1,
-                 is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0, trigger=0.0):
+                 is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0):
+        super().__init__()
         # not tree specific features (most likely added at creation)
         self.p_val = p_val
         self.effect = effect
         self.node_depth = node_depth
         self.control_mean = control_mean
         self.treatment_mean = treatment_mean
-
-        self.trigger = trigger
 
         # during tree building
         self.obj = obj
@@ -29,38 +27,55 @@ class TriggerNode(ABC):
         self.true_branch = None
         self.false_branch = None
 
+        # after calling functions
+        self.column_name = ""
+        self.decision = ""
 
-class TriggerTree(ABC):
 
-    def __init__(self, weight=0.5, val_split=0.5, max_depth=-1, min_size=2, quartile=False, seed=724):
+class CausalTreeLearn(CausalTree):
+
+    def __init__(self, weight=0.5, val_split=0.5, max_depth=-1, min_size=2, seed=724):
+        super().__init__()
         self.weight = weight
         self.val_split = val_split
         self.max_depth = max_depth
         self.min_size = min_size
         self.seed = seed
 
-        self.quartile = quartile
-
-        self.obj = 0.0
-
-        # Haven't implemented "mse" yet
-        self.mse = 0.0
-
         self.max_effect = 0.0
         self.min_effect = 0.0
 
-        self.tree_depth = 0
-        self.num_leaves = 0
+        self.features = None
 
-        self.root = TriggerNode()
+        self.root = CausalTreeLearnNode()
 
     @abstractmethod
     def fit(self, x, y, t):
         pass
 
+    def _eval(self, train_y, train_t, val_y, val_t):
+        total_train = train_y.shape[0]
+        total_val = val_y.shape[0]
+
+        return_val = (-np.inf, -np.inf)
+
+        if total_train == 0 or total_val == 0:
+            return return_val
+
+        train_effect = ace(train_y, train_t)
+        val_effect = ace(val_y, val_t)
+
+        train_mse = (1 - self.weight) * total_train * (train_effect ** 2)
+        cost = self.weight * total_val * np.abs(train_effect - val_effect)
+
+        obj = (train_mse - cost) / (np.abs(total_train - total_val) + 1)
+        mse = total_train * (train_effect ** 2)
+
+        return obj, mse
+
     def predict(self, x):
 
-        def _predict(node: TriggerNode, observation):
+        def _predict(node: CausalTreeLearnNode, observation):
             if node.is_leaf:
                 return node.effect
             else:
@@ -88,7 +103,7 @@ class TriggerTree(ABC):
 
     def prune(self, alpha=0.05):
 
-        def _prune(node: TriggerNode):
+        def _prune(node: CausalTreeLearnNode):
             if node.true_branch is None or node.false_branch is None:
                 return
 
@@ -120,6 +135,8 @@ class TriggerTree(ABC):
                     # ----------------------------------------------------------------
                     if tb.node_depth == self.tree_depth:
                         self.tree_depth = self.tree_depth - 1
+
+                    _prune(tb)
 
         _prune(self.root)
 

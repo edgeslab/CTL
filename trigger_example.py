@@ -1,4 +1,3 @@
-import pandas as pd
 from CTL.CTL import CausalTree
 from sklearn.model_selection import train_test_split
 import numpy as np

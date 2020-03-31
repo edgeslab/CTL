@@ -1,7 +1,8 @@
-from CTL.causal_tree import *
+from CTL.causal_tree.ctl.binary_ctl import *
+from sklearn.model_selection import train_test_split
 
 
-class HonestNode(Node):
+class HonestCausalTreeLearnNode(CausalTreeLearnNode):
 
     def __init__(self, var=0.0, **kwargs):
         super().__init__(**kwargs)
@@ -10,13 +11,13 @@ class HonestNode(Node):
 
 
 # ----------------------------------------------------------------
-# Honest causal tree learn (binary, base objective - honest penalty)
+# Honest causal tree learn (ctl, base objective - honest penalty)
 # ----------------------------------------------------------------
-class CausalTreeLearnHonest(CausalTree):
+class CausalTreeLearnHonest(CausalTreeLearn):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.root = HonestNode()
+        self.root = HonestCausalTreeLearnNode()
         self.train_to_est_ratio = 1.0
 
         self.num_treated = 1.0
@@ -42,21 +43,23 @@ class CausalTreeLearnHonest(CausalTree):
         train_x, val_x, train_y, val_y, train_t, val_t = train_test_split(x, y, t, random_state=self.seed, shuffle=True,
                                                                           test_size=self.val_split)
         # get honest/estimation portion
-        train_x, est_x, train_y, est_y, train_t, est_t = train_test_split(train_x, train_y, train_t,
+        train_x, est_x, train_y, est_y, train_t, est_t = train_test_split(train_x, train_y, train_t, shuffle=True,
                                                                           random_state=self.seed, test_size=0.5)
 
         num_treat, _ = get_treat_size(t)
         self.num_treated = num_treat
         self.num_samples = x.shape[0]
         self.treated_share = self.num_treated / self.num_samples
+        self.root.num_samples = est_x.shape[0]
         # ----------------------------------------------------------------
         # effect and pvals
         # ----------------------------------------------------------------
-        _, effect = tau_squared(est_y, est_t)
+        effect = tau_squared(est_y, est_t)
         p_val = get_pval(est_y, est_t)
         self.root.effect = effect
         self.root.p_val = p_val
 
+        # TODO: est ratio is overall?
         self.train_to_est_ratio = est_x.shape[0] / train_x.shape[0]
         current_var_treat, current_var_control = variance(train_y, train_t)
         num_treat, num_cont = get_treat_size(train_t)
@@ -82,7 +85,7 @@ class CausalTreeLearnHonest(CausalTree):
 
         self._fit(self.root, train_x, train_y, train_t, val_x, val_y, val_t, est_x, est_y, est_t)
 
-    def _fit(self, node: HonestNode, train_x, train_y, train_t, val_x, val_y, val_t, est_x, est_y, est_t):
+    def _fit(self, node: HonestCausalTreeLearnNode, train_x, train_y, train_t, val_x, val_y, val_t, est_x, est_y, est_t):
 
         if train_x.shape[0] == 0 or val_x.shape[0] == 0 or est_x.shape[0] == 0:
             return node
@@ -191,10 +194,10 @@ class CausalTreeLearnHonest(CausalTree):
                 # Ignore "mse" here, come back to it later?
                 # ----------------------------------------------------------------
 
-                tb = HonestNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val, node_depth=node.node_depth + 1,
-                                var=best_tb_var, num_samples=est_x1.shape[0])
-                fb = HonestNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val, node_depth=node.node_depth + 1,
-                                var=best_tb_var, num_samples=est_x2.shape[0])
+                tb = HonestCausalTreeLearnNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val, node_depth=node.node_depth + 1,
+                                               var=best_tb_var, num_samples=est_x1.shape[0])
+                fb = HonestCausalTreeLearnNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val, node_depth=node.node_depth + 1,
+                                               var=best_tb_var, num_samples=est_x2.shape[0])
 
                 node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1,
                                              est_x1, est_y1, est_t1)
@@ -218,23 +221,3 @@ class CausalTreeLearnHonest(CausalTree):
                 node.leaf_num = self.num_leaves
                 node.is_leaf = True
                 return node
-
-    def _eval(self, train_y, train_t, val_y, val_t):
-        total_train = train_y.shape[0]
-        total_val = val_y.shape[0]
-
-        return_val = (-np.inf, -np.inf)
-
-        if total_train == 0 or total_val == 0:
-            return return_val
-
-        train_effect = ace(train_y, train_t)
-        val_effect = ace(val_y, val_t)
-
-        train_mse = (1 - self.weight) * total_train * (train_effect ** 2)
-        cost = self.weight * total_val * np.abs(train_effect - val_effect)
-
-        obj = (train_mse - cost) / (np.abs(total_train - total_val) + 1)
-        mse = total_train * (train_effect ** 2)
-
-        return obj, mse
