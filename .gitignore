@@ -6,3 +6,4 @@ build/
 causal_tree_learn.egg-info
 dist
 test_script.py
+/backup/

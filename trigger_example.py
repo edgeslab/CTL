@@ -1,5 +1,4 @@
-import pandas as pd
-from CTL.CTL import CausalTree
+from CTL.causal_tree_learn import CausalTree
 from sklearn.model_selection import train_test_split
 import numpy as np
 
@@ -29,15 +28,24 @@ cth_predict = cth.predict(x_test)
 # val honest CTL
 cthv = CausalTree(cont=True, val_honest=True)
 cthv.fit(x_train, y_train, treat_train)
-cthv_predict, groups, triggers, features = cthv.predict(x_test, return_groups=True, return_features=True, variables=variable_names)
+cthv_predict = cthv.predict(x_test)
 
-# print(cthv_predict)
+# to get which examples are in which leaf
+groups = cthv.get_groups(x_test)
 
-# for i in range(len(features)):
-#     print(groups[i], features[i])
+# to get triggers
+triggers = cthv.get_triggers(x_test)
+print(triggers)
+
+# to get features used, input the columns
+features_used = cthv.get_variable_used(variable_names)
+print(features_used)
+
+# to get the decision for every example
+features = cthv.get_features(x)
+print(features)
 
 # if you want to plot a tree
-cthv.plot_tree(training_data=x_train, file="output/tree")
+cthv.plot_tree(filename="output/trigger_tree")
 
-# if you have variable names
-# ctl.plot_tree(feat_names=variable_names)
+

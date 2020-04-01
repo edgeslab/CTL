@@ -1,0 +1,9 @@
+digraph Tree {
+node [shape=box, fontsize=32] ;
+edge [fontsize=24] ;
+0 [label="effect = -0.605\ntrigger > 1.86\np = 0.357\nsamples = 100\nFeature 0 >= -0.720\n", style=filled, fillcolor="/reds9/6"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True", color=green, penwidth=2] ;
+1 [label="effect = 0.337\ntrigger > -0.32\np = 0.236\nsamples = 70", style=filled, fillcolor="/blues9/4"] ;
+0 -> 2 [labeldistance=2.5, labelangle=-45, headlabel="False", color=red, penwidth=2] ;
+2 [label="effect = -0.440\ntrigger > -0.79\np = 0.276\nsamples = 30", style=filled, fillcolor="/reds9/4"] ;
+}

@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="causal_tree_learn",
-    version="1.0.21",
+    version="1.0.26",
     author="Christopher Tran",
     author_email="ctran29@uic.edu",
     description="Python implementation of causal trees with validation",

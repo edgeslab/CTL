@@ -1,5 +1,5 @@
 import pandas as pd
-from CTL.CTL import CausalTree
+from CTL.causal_tree_learn import CausalTree
 from sklearn.model_selection import train_test_split
 import numpy as np
 
@@ -41,12 +41,7 @@ cthv = CausalTree(val_honest=True)
 cthv.fit(x_train, y_train, treat_train)
 cthv_predict = cthv.predict(x_test)
 
+print(ctl.tree_depth)
 print(ctl_predict)
 
-cthv.plot_tree(feat_names=columns, file="output/bin_tree", show_effect=True)
-
-# if you want to plot a tree
-# ctl.plot_tree(training_data=x_train)
-
-# if you have variable names
-# ctl.plot_tree(feat_names=variable_names)
+cthv.plot_tree(features=columns, filename="output/bin_tree", show_effect=True)
