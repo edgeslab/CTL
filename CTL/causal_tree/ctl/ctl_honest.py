@@ -62,7 +62,7 @@ class CausalTreeLearnHonest(CausalTreeLearn):
         # TODO: est ratio is overall?
         self.train_to_est_ratio = est_x.shape[0] / train_x.shape[0]
         current_var_treat, current_var_control = variance(train_y, train_t)
-        num_treat, num_cont = get_treat_size(train_t)
+        # num_treat, num_cont = get_treat_size(train_t)
         # current_var = (1 * self.train_to_est_ratio) * (
         #         (current_var_treat / num_treat) + (current_var_control / num_cont))
         current_var = (1 * self.train_to_est_ratio) * (

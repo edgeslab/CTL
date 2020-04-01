@@ -61,7 +61,7 @@ class TriggerTreeHonest(TriggerTree):
         current_var_treat, current_var_control = variance_trigger(train_y, train_t, trigger)
         num_treat, num_cont = get_treat_size(train_t, trigger)
         treated_share = num_treat / train_x.shape[0] if num_treat > 0 else 1.0
-        control_share = 1 - treated_share if num_treat > 0 else 0.0
+        control_share = 1 - treated_share if treated_share < 1 else 0.0
         current_var = (1 * self.train_to_est_ratio) * (
                 (current_var_treat / treated_share) + (current_var_control / (1 - control_share)))
 
@@ -138,10 +138,14 @@ class TriggerTreeHonest(TriggerTree):
                 var_treat2, var_control2 = variance(train_y2, train_t2)
                 tb_nt, tb_nc = get_treat_size(train_t1, tb_trigger)
                 fb_nt, fb_nc = get_treat_size(train_t2, fb_trigger)
+                tb_treated_share = tb_nt / train_x.shape[0] if tb_nt > 0 else 1.0
+                tb_control_share = 1 - tb_treated_share if tb_treated_share < 1 else 1.0
+                fb_treated_share = tb_nt / train_x.shape[0] if fb_nt > 0 else 1.0
+                fb_control_share = 1 - fb_treated_share if fb_treated_share < 1 else 1.0
                 tb_var = (1 + self.train_to_est_ratio) * (
-                        (var_treat1 / (tb_nt / train_t1.shape[0])) + (var_control1 / (1 - (tb_nc / train_t1.shape[0]))))
+                        (var_treat1 / tb_treated_share) + (var_control1 / tb_control_share))
                 fb_var = (1 + self.train_to_est_ratio) * (
-                        (var_treat2 / (fb_nt / train_t2.shape[0])) + (var_control2 / (1 - (fb_nc / train_t2.shape[0]))))
+                        (var_treat2 / fb_treated_share) + (var_control2 / fb_control_share))
 
                 # combine honest and our objective
                 split_eval = (tb_eval + fb_eval) - (tb_var + fb_var)
