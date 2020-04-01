@@ -143,9 +143,11 @@ class CausalTreeLearnBase(CausalTreeLearn):
                 # Ignore "mse" here, come back to it later?
                 # ----------------------------------------------------------------
 
-                tb = BaseCausalTreeLearnNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val, node_depth=node.node_depth + 1,
+                tb = BaseCausalTreeLearnNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
+                                             node_depth=node.node_depth + 1,
                                              num_samples=y1.shape[0])
-                fb = BaseCausalTreeLearnNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val, node_depth=node.node_depth + 1,
+                fb = BaseCausalTreeLearnNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
+                                             node_depth=node.node_depth + 1,
                                              num_samples=y2.shape[0])
 
                 node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1)

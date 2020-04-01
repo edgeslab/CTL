@@ -194,7 +194,6 @@ class CausalTreeLearn(CausalTree):
 
         _prune(self.root)
 
-    @abstractmethod
     def get_triggers(self, x):
         pass
 
