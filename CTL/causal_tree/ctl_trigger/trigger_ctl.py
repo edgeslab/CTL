@@ -130,3 +130,27 @@ class TriggerTree(CausalTreeLearn):
         best_mse = train_err[argmax_obj]
 
         return best_obj, best_trigger, best_mse
+
+    def get_triggers(self, x):
+        def _get_features(node: TriggerNode, observation):
+            if node.is_leaf:
+                return node.trigger
+            else:
+                v = observation[node.col]
+                if v >= node.value:
+                    branch = node.true_branch
+                else:
+                    branch = node.false_branch
+
+            return _get_features(branch, observation)
+
+        if len(x.shape) == 1:
+            return _get_features(self.root, x)
+        num_test = x.shape[0]
+        triggers = np.zeros(num_test)
+
+        for i in range(num_test):
+            test_example = x[i, :]
+            triggers[i] = _get_features(self.root, test_example)
+
+        return triggers

@@ -48,14 +48,14 @@ class TriggerTreeBase(TriggerTree):
         # ----------------------------------------------------------------
         # Not sure if i should eval in root or not
         # ----------------------------------------------------------------
-        eval, trigger, mse = self._eval(train_y, train_t, val_y, val_t)
-        self.root.obj = eval
+        node_eval, trigger, mse = self._eval(train_y, train_t, val_y, val_t)
+        self.root.obj = node_eval
 
         # ----------------------------------------------------------------
         # Add control/treatment means
         # ----------------------------------------------------------------
-        self.root.control_mean = np.mean(y[t == 0])
-        self.root.treatment_mean = np.mean(y[t == 1])
+        self.root.control_mean = np.mean(y[t >= trigger])
+        self.root.treatment_mean = np.mean(y[t < trigger])
 
         self.root.num_samples = x.shape[0]
 

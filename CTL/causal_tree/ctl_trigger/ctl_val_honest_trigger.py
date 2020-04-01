@@ -66,8 +66,8 @@ class TriggerTreeHonestValidation(TriggerTree):
         # ----------------------------------------------------------------
         # Not sure if i should eval in root or not
         # ----------------------------------------------------------------
-        eval, trigger, mse = self._eval(train_y, train_t, val_y, val_t)
-        self.root.obj = eval - current_var
+        node_eval, trigger, mse = self._eval(train_y, train_t, val_y, val_t)
+        self.root.obj = node_eval - current_var
 
         # ----------------------------------------------------------------
         # Add control/treatment means

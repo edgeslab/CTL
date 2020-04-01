@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class Node(ABC):
 
     def __init__(self):
-        pass
+        self.is_leaf = False
 
 
 class Tree(ABC):

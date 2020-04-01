@@ -101,6 +101,59 @@ class CausalTreeLearn(CausalTree):
 
         return prediction
 
+    def get_groups(self, x):
+
+        def _get_group(node: CausalTreeLearnNode, observation):
+            if node.is_leaf:
+                return node.leaf_num
+            else:
+                v = observation[node.col]
+                if v >= node.value:
+                    branch = node.true_branch
+                else:
+                    branch = node.false_branch
+
+            return _get_group(branch, observation)
+
+        if len(x.shape) == 1:
+            return _get_group(self.root, x)
+        num_test = x.shape[0]
+        leaf_results = np.zeros(num_test)
+
+        for i in range(num_test):
+            test_example = x[i, :]
+            leaf_results[i] = _get_group(self.root, test_example)
+
+        return leaf_results
+
+    def get_features(self, x):
+
+        def _get_features(node: CausalTreeLearnNode, observation, features):
+            if node.is_leaf:
+                return features
+            else:
+                v = observation[node.col]
+                if v >= node.value:
+                    branch = node.true_branch
+                else:
+                    branch = node.false_branch
+
+            features.append(node.decision)
+            return _get_features(branch, observation, features)
+
+        if len(x.shape) == 1:
+            features = []
+            return _get_features(self.root, x, features)
+        num_test = x.shape[0]
+        leaf_features = []
+
+        for i in range(num_test):
+            features = []
+            test_example = x[i, :]
+            leaf_features.append(_get_features(self.root, test_example, features))
+
+        return leaf_features
+
     def prune(self, alpha=0.05):
 
         def _prune(node: CausalTreeLearnNode):
@@ -127,6 +180,7 @@ class CausalTreeLearn(CausalTree):
                     node.true_branch = None
                     node.false_branch = None
                     self.num_leaves = self.num_leaves - 1
+                    node.is_leaf = True
 
                     # ----------------------------------------------------------------
                     # Something about obj/mse? if that is added
@@ -139,6 +193,10 @@ class CausalTreeLearn(CausalTree):
                     _prune(tb)
 
         _prune(self.root)
+
+    @abstractmethod
+    def get_triggers(self, x):
+        pass
 
     def save(self, filename):
         import pickle as pkl

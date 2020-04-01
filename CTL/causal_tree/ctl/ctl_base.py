@@ -49,8 +49,8 @@ class CausalTreeLearnBase(CausalTreeLearn):
         # ----------------------------------------------------------------
         # Not sure if i should eval in root or not
         # ----------------------------------------------------------------
-        eval, mse = self._eval(train_y, train_t, val_y, val_t)
-        self.root.obj = eval
+        node_eval, mse = self._eval(train_y, train_t, val_y, val_t)
+        self.root.obj = node_eval
 
         # ----------------------------------------------------------------
         # Add control/treatment means

@@ -7,7 +7,7 @@ from CTL.causal_tree.ctl_trigger.ctl_honest_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_val_honest_trigger import *
 
 
-class Tree:
+class CausalTree:
 
     def __init__(self, cont=False, val_honest=False, honest=False, min_size=2, max_depth=-1, val_split=0.5, weight=0.5,
                  seed=724, quartile=False):
@@ -35,11 +35,13 @@ class Tree:
 
         self.column_num = 0
         self.fitted = False
+        self.tree_depth = 0
 
     def fit(self, x, y, t):
         self.column_num = x.shape[1]
         self.tree.fit(x, y, t)
         self.fitted = True
+        self.tree_depth = self.tree.tree_depth
 
     def predict(self, x):
         if self.fitted:
@@ -50,10 +52,23 @@ class Tree:
     def prune(self, alpha=0.05):
         self.tree.prune(alpha=alpha)
 
+    def get_groups(self, x):
+        return self.tree.get_groups(x)
+
+    def get_features(self, x):
+        return self.tree.get_features(x)
+
+    def get_triggers(self, x):
+        if self.cont:
+            return self.tree.get_triggers(x)
+        else:
+            return "Need to be a trigger tree"
+
     # ----------------------------------------------------------------
     # Plotting and printing trees
     # ----------------------------------------------------------------
-    def plot_tree(self, filename="tree", features=None, alpha=0.05, show_pval=True, dpi=100, show_samples=True,
+    def plot_tree(self, filename="tree", features=None, training_data=None, alpha=0.05, show_pval=True, dpi=100,
+                  show_samples=True,
                   show_effect=True, trigger_precision=2, extension="png", create_png=True):
         if not self.fitted:
             return "Tree not fitted yet!"
@@ -122,7 +137,8 @@ class Tree:
                                 show_samples=show_samples, show_effect=show_effect, trigger_precision=trigger_precision)
             dot_file.write("}")
 
-    def _tree_to_dot_r(self, node: CausalTreeLearnNode, features, dot_file, counter, alpha=0.5, show_pval=True, show_samples=True,
+    def _tree_to_dot_r(self, node: CausalTreeLearnNode, features, dot_file, counter, alpha=0.5, show_pval=True,
+                       show_samples=True,
                        show_effect=True, trigger_precision=2):
 
         curr_node = counter
@@ -312,3 +328,48 @@ class Tree:
                 _assign_feature_names(node.false_branch, feat_names)
 
         _assign_feature_names(self.tree.root, variable_names)
+
+    def get_variable_used(self, variable_names=None, cat=False):
+
+        if self.tree.features is None:
+            if variable_names is not None:
+                self.assign_feature_names(feature_names=variable_names)
+
+        def _get_variables(node: CausalTreeLearnNode, list_vars, list_depths):
+
+            # print(node.is_leaf, node.true_branch, node.false_branch)
+            if node.is_leaf:
+                return list_vars, list_depths
+            else:
+                if cat:
+                    if "==" in node.decision:
+                        list_fs = node.decision.split("==")
+                        list_fs = [i.strip() for i in list_fs]
+                        to_append = "_".join(list_fs)
+                        if to_append not in list_vars:
+                            list_vars.append(to_append)
+                            list_depths.append(node.node_depth)
+                    else:
+                        if node.decision not in list_vars:
+                            list_vars.append(node.column_name)
+                            list_depths.append(node.node_depth)
+                else:
+                    if node.decision not in list_vars:
+                        list_vars.append(node.column_name)
+                        list_depths.append(node.node_depth)
+
+                list_vars, list_depths = _get_variables(node.true_branch, list_vars, list_depths)
+                list_vars, list_depths = _get_variables(node.false_branch, list_vars, list_depths)
+
+                return list_vars, list_depths
+
+        list_of_vars = []
+        list_of_depths = []
+        list_of_vars, list_of_depths = _get_variables(self.tree.root, list_of_vars, list_of_depths)
+
+        sorted_vars = []
+        sorted_idx = np.argsort(list_of_depths)
+        for i in sorted_idx:
+            sorted_vars.append(list_of_vars[i])
+
+        return sorted_vars
