@@ -17,7 +17,7 @@ ext_modules = [
 
 setuptools.setup(
     name="causal_tree_learn",
-    version="2.1",
+    version="2.2",
     author="Christopher Tran",
     author_email="ctran29@uic.edu",
     description="Python implementation of causal trees with validation",
