@@ -8,6 +8,6 @@ dist
 /backup/
 
 test_script.py
-test_cython.py
-test_cython_binary.py
 test_cython_trigger.py
+test_cython_binary.py
+test_cython.py

@@ -7,8 +7,7 @@ from CTL.causal_tree.ctl_trigger.ctl_base_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_honest_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_val_honest_trigger import *
 
-
-# from CTL.causal_tree.cython_ctl.ctl_base import *
+from CTL.causal_tree.cython_ctl.ctl_base import *
 
 
 class CausalTree:
@@ -16,35 +15,36 @@ class CausalTree:
     def __init__(self, cont=False, val_honest=False, honest=False, min_size=2, max_depth=-1, split_size=0.5, weight=0.5,
                  seed=724, quartile=False, old=True, use_cython=False):
         self.cont = cont
-        # self.use_cython = use_cython
-        # if use_cython:
-        #     self.tree = CausalTreeLearnBaseCython(min_size=min_size, max_depth=max_depth, val_split=val_split,
-        #                                           weight=weight, seed=seed)
-        # else:
-        if cont:
-            if val_honest:
-                self.tree = TriggerTreeHonestValidation(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                                                        weight=weight, seed=seed, quartile=quartile, old=old)
-            elif honest:
-                self.tree = TriggerTreeHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                                              weight=weight, seed=seed, quartile=quartile, old=old)
-            else:
-                self.tree = TriggerTreeBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                                            weight=weight,
-                                            seed=seed, quartile=quartile, old=old)
-        else:
-            if split_size <= 0 or weight <= 0:
-                self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
-                                         split_size=split_size, weight=weight, seed=seed)
-            elif val_honest:
-                self.tree = CausalTreeLearnHonestValidation(min_size=min_size, max_depth=max_depth,
-                                                            split_size=split_size, weight=weight, seed=seed)
-            elif honest:
-                self.tree = CausalTreeLearnHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
+        self.use_cython = use_cython
+        if use_cython:
+            self.tree = CausalTreeLearnBaseCython(min_size=min_size, max_depth=max_depth, val_split=split_size,
                                                   weight=weight, seed=seed)
+        else:
+            if cont:
+                if val_honest:
+                    self.tree = TriggerTreeHonestValidation(min_size=min_size, max_depth=max_depth,
+                                                            split_size=split_size, weight=weight, seed=seed,
+                                                            quartile=quartile, old=old)
+                elif honest:
+                    self.tree = TriggerTreeHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
+                                                  weight=weight, seed=seed, quartile=quartile, old=old)
+                else:
+                    self.tree = TriggerTreeBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
+                                                weight=weight,
+                                                seed=seed, quartile=quartile, old=old)
             else:
-                self.tree = CausalTreeLearnBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                                                weight=weight, seed=seed)
+                if split_size <= 0 or weight <= 0:
+                    self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
+                                             split_size=split_size, weight=weight, seed=seed)
+                elif val_honest:
+                    self.tree = CausalTreeLearnHonestValidation(min_size=min_size, max_depth=max_depth,
+                                                                split_size=split_size, weight=weight, seed=seed)
+                elif honest:
+                    self.tree = CausalTreeLearnHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
+                                                      weight=weight, seed=seed)
+                else:
+                    self.tree = CausalTreeLearnBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
+                                                    weight=weight, seed=seed)
 
         self.column_num = 0
         self.fitted = False
