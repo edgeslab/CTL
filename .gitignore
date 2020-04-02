@@ -5,5 +5,9 @@ __pycache__/
 build/
 causal_tree_learn.egg-info
 dist
-test_script.py
 /backup/
+
+test_script.py
+test_cython.py
+test_cython_binary.py
+test_cython_trigger.py

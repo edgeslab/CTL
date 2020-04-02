@@ -139,7 +139,7 @@ class TriggerTreeHonestValidation(TriggerTree):
                 fb_nt, fb_nc = get_treat_size(val_t2, fb_trigger)
                 tb_treated_share = tb_nt / train_x.shape[0] if tb_nt > 0 else 1.0
                 tb_control_share = 1 - tb_treated_share if tb_treated_share < 1 else 1.0
-                fb_treated_share = tb_nt / train_x.shape[0] if fb_nt > 0 else 1.0
+                fb_treated_share = fb_nt / train_x.shape[0] if fb_nt > 0 else 1.0
                 fb_control_share = 1 - fb_treated_share if fb_treated_share < 1 else 1.0
                 tb_var = (1 + self.train_to_est_ratio) * (
                         (var_treat1 / tb_treated_share) + (var_control1 / tb_control_share))

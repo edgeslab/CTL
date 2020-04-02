@@ -1,3 +1,4 @@
+from CTL.causal_tree.ctl.adaptive import *
 from CTL.causal_tree.ctl.ctl_base import *
 from CTL.causal_tree.ctl.ctl_honest import *
 from CTL.causal_tree.ctl.ctl_val_honest import *
@@ -7,30 +8,42 @@ from CTL.causal_tree.ctl_trigger.ctl_honest_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_val_honest_trigger import *
 
 
+# from CTL.causal_tree.cython_ctl.ctl_base import *
+
+
 class CausalTree:
 
-    def __init__(self, cont=False, val_honest=False, honest=False, min_size=2, max_depth=-1, val_split=0.5, weight=0.5,
-                 seed=724, quartile=False):
+    def __init__(self, cont=False, val_honest=False, honest=False, min_size=2, max_depth=-1, split_size=0.5, weight=0.5,
+                 seed=724, quartile=False, old=True, use_cython=False):
         self.cont = cont
+        # self.use_cython = use_cython
+        # if use_cython:
+        #     self.tree = CausalTreeLearnBaseCython(min_size=min_size, max_depth=max_depth, val_split=val_split,
+        #                                           weight=weight, seed=seed)
+        # else:
         if cont:
             if val_honest:
-                self.tree = TriggerTreeHonestValidation(min_size=min_size, max_depth=max_depth, val_split=val_split,
-                                                        weight=weight, seed=seed, quartile=quartile)
+                self.tree = TriggerTreeHonestValidation(min_size=min_size, max_depth=max_depth, split_size=split_size,
+                                                        weight=weight, seed=seed, quartile=quartile, old=old)
             elif honest:
-                self.tree = TriggerTreeHonest(min_size=min_size, max_depth=max_depth, val_split=val_split,
-                                              weight=weight, seed=seed, quartile=quartile)
+                self.tree = TriggerTreeHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
+                                              weight=weight, seed=seed, quartile=quartile, old=old)
             else:
-                self.tree = TriggerTreeBase(min_size=min_size, max_depth=max_depth, val_split=val_split, weight=weight,
-                                            seed=seed, quartile=quartile)
+                self.tree = TriggerTreeBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
+                                            weight=weight,
+                                            seed=seed, quartile=quartile, old=old)
         else:
-            if val_honest:
-                self.tree = CausalTreeLearnHonestValidation(min_size=min_size, max_depth=max_depth, val_split=val_split,
-                                                            weight=weight, seed=seed)
+            if split_size <= 0 or weight <= 0:
+                self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
+                                         split_size=split_size, weight=weight, seed=seed)
+            elif val_honest:
+                self.tree = CausalTreeLearnHonestValidation(min_size=min_size, max_depth=max_depth,
+                                                            split_size=split_size, weight=weight, seed=seed)
             elif honest:
-                self.tree = CausalTreeLearnHonest(min_size=min_size, max_depth=max_depth, val_split=val_split,
+                self.tree = CausalTreeLearnHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
                                                   weight=weight, seed=seed)
             else:
-                self.tree = CausalTreeLearnBase(min_size=min_size, max_depth=max_depth, val_split=val_split,
+                self.tree = CausalTreeLearnBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
                                                 weight=weight, seed=seed)
 
         self.column_num = 0
@@ -39,6 +52,9 @@ class CausalTree:
 
     def fit(self, x, y, t):
         self.column_num = x.shape[1]
+        x = x.astype(np.float)
+        y = y.astype(np.float)
+        t = t.astype(np.float)
         self.tree.fit(x, y, t)
         self.fitted = True
         self.tree_depth = self.tree.tree_depth
@@ -329,7 +345,7 @@ class CausalTree:
 
         _assign_feature_names(self.tree.root, variable_names)
 
-    def get_variable_used(self, variable_names=None, cat=False):
+    def get_variables_used(self, variable_names=None, cat=False):
 
         if self.tree.features is None:
             if variable_names is not None:

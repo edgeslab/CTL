@@ -102,9 +102,9 @@ def tau_squared_trigger(outcome, treatment, min_size=1, quartile=False):
 
 
 def ace(y, t):
-    treat = t == 1
+    treat = t >= 0.5
     # control = t == 0
-    control = ~t
+    control = ~treat
 
     yt = y[treat]
     yc = y[control]
@@ -139,7 +139,7 @@ def ace_trigger(y, t, trigger):
 def get_pval(y, t):
     treat = t == 1
     # control = t == 0
-    control = ~t
+    control = ~treat
 
     outcome_cont = y[treat]
     outcome_trt = y[control]

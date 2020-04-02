@@ -1,5 +1,5 @@
-from CTL.causal_tree.util import *
-# from CTL.causal_tree.util_c import *
+# from CTL.causal_tree.util import *
+from CTL.causal_tree.util_c import *
 from CTL.causal_tree.causal_tree import *
 import numpy as np
 
@@ -35,10 +35,10 @@ class CausalTreeLearnNode(CausalTreeNode):
 
 class CausalTreeLearn(CausalTree):
 
-    def __init__(self, weight=0.5, split_size=0.5, max_depth=-1, min_size=2, seed=724):
+    def __init__(self, weight=0.5, val_split=0.5, max_depth=-1, min_size=2, seed=724):
         super().__init__()
         self.weight = weight
-        self.val_split = split_size
+        self.val_split = val_split
         self.max_depth = max_depth
         self.min_size = min_size
         self.seed = seed
@@ -58,10 +58,10 @@ class CausalTreeLearn(CausalTree):
         total_train = train_y.shape[0]
         total_val = val_y.shape[0]
 
-        # return_val = (-np.inf, -np.inf)
-        #
-        # if total_train == 0 or total_val == 0:
-        #     return return_val
+        return_val = (-np.inf, -np.inf)
+
+        if total_train == 0 or total_val == 0:
+            return return_val
 
         train_effect = ace(train_y, train_t)
         val_effect = ace(val_y, val_t)

@@ -1,10 +1,19 @@
 from setuptools import setup
 from setuptools import find_packages
+from distutils.extension import Extension
+from Cython.Distutils import build_ext
+from Cython.Build import cythonize
+import numpy as np
 import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+ext_modules = [
+    Extension(name="CTL.causal_tree.util_c", sources=["CTL/causal_tree/util_c.pyx"], include_dirs=[np.get_include()]),
+    Extension(name="CTL.causal_tree.cython_ctl.ctl_base", sources=["CTL/causal_tree/cython_ctl/ctl_base.pyx"],
+              include_dirs=[np.get_include()])
+]
 
 setuptools.setup(
     name="causal_tree_learn",
@@ -26,4 +35,6 @@ setuptools.setup(
                       'scipy'
                       ],
     python_requires='>=3.6',
+    ext_modules=cythonize(ext_modules),
+    cmdclass={'build_ext': build_ext}
 )

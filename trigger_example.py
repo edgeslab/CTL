@@ -38,7 +38,7 @@ triggers = cthv.get_triggers(x_test)
 print(triggers)
 
 # to get features used, input the columns
-features_used = cthv.get_variable_used(variable_names)
+features_used = cthv.get_variables_used(variable_names)
 print(features_used)
 
 # to get the decision for every example
