@@ -7,31 +7,25 @@ from CTL.causal_tree.ctl_trigger.ctl_base_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_honest_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_val_honest_trigger import *
 
-from CTL.causal_tree.cython_ctl.ctl_base import *
-
 
 class CausalTree:
 
     def __init__(self, cont=False, val_honest=False, honest=False, min_size=2, max_depth=-1, split_size=0.5, weight=0.5,
-                 seed=724, quartile=False, old=True, use_cython=False):
+                 seed=724, quartile=False, old_trigger_code=False):
         self.cont = cont
-        self.use_cython = use_cython
-        # if use_cython:
-        #     self.tree = CausalTreeLearnBaseCython(min_size=min_size, max_depth=max_depth, val_split=split_size,
-        #                                           weight=weight, seed=seed)
-        # else:
         if cont:
             if val_honest:
                 self.tree = TriggerTreeHonestValidation(min_size=min_size, max_depth=max_depth,
                                                         split_size=split_size, weight=weight, seed=seed,
-                                                        quartile=quartile, old=old)
+                                                        quartile=quartile, old_trigger_code=old_trigger_code)
             elif honest:
                 self.tree = TriggerTreeHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                                              weight=weight, seed=seed, quartile=quartile, old=old)
+                                              weight=weight, seed=seed, quartile=quartile,
+                                              old_trigger_code=old_trigger_code)
             else:
                 self.tree = TriggerTreeBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                                            weight=weight,
-                                            seed=seed, quartile=quartile, old=old)
+                                            weight=weight, seed=seed, quartile=quartile,
+                                            old_trigger_code=old_trigger_code)
         else:
             if split_size <= 0 or weight <= 0:
                 self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
@@ -370,7 +364,7 @@ class CausalTree:
                             list_vars.append(node.column_name)
                             list_depths.append(node.node_depth)
                 else:
-                    if node.decision not in list_vars:
+                    if node.column_name not in list_vars:
                         list_vars.append(node.column_name)
                         list_depths.append(node.node_depth)
 

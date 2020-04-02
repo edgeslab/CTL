@@ -11,14 +11,6 @@ with open("README.md", "r") as fh:
 
 ext_modules = [
     Extension(name="CTL.causal_tree.util_c", sources=["CTL/causal_tree/util_c.pyx"], include_dirs=[np.get_include()]),
-    Extension(name="CTL.causal_tree.cython_ctl.binary_ctl", sources=["CTL/causal_tree/cython_ctl/binary_ctl.pyx"],
-              include_dirs=[np.get_include()]),
-    Extension(name="CTL.causal_tree.cython_ctl.ctl_base", sources=["CTL/causal_tree/cython_ctl/ctl_base.pyx"],
-              include_dirs=[np.get_include()]),
-    Extension(name="CTL.causal_tree.cython_ctl.ctl_honest", sources=["CTL/causal_tree/cython_ctl/ctl_honest.pyx"],
-              include_dirs=[np.get_include()]),
-    Extension(name="CTL.causal_tree.cython_ctl.ctl_honest", sources=["CTL/causal_tree/cython_ctl/ctl_val_honest.pyx"],
-              include_dirs=[np.get_include()]),
 ]
 
 setuptools.setup(

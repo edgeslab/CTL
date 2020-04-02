@@ -16,11 +16,11 @@ class TriggerNode(CausalTreeLearnNode):
 
 class TriggerTree(CausalTreeLearn):
 
-    def __init__(self, quartile=True, old=False, **kwargs):
+    def __init__(self, quartile=True, old_trigger_code=False, **kwargs):
         super().__init__(**kwargs)
 
         self.quartile = quartile
-        self.old = old
+        self.old_trigger_code = old_trigger_code
 
         self.root = TriggerNode()
 
@@ -38,7 +38,7 @@ class TriggerTree(CausalTreeLearn):
         if total_train == 0 or total_val == 0:
             return return_val
 
-        if self.old:
+        if self.old_trigger_code:
             unique_treatment = np.unique(train_t)
 
             if unique_treatment.shape[0] == 1:
