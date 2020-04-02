@@ -16,7 +16,7 @@ class TriggerNode(CausalTreeLearnNode):
 
 class TriggerTree(CausalTreeLearn):
 
-    def __init__(self, quartile=True, old=True, **kwargs):
+    def __init__(self, quartile=True, old=False, **kwargs):
         super().__init__(**kwargs)
 
         self.quartile = quartile
