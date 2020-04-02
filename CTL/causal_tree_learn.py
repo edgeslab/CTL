@@ -3,6 +3,7 @@ from CTL.causal_tree.ctl.ctl_base import *
 from CTL.causal_tree.ctl.ctl_honest import *
 from CTL.causal_tree.ctl.ctl_val_honest import *
 
+from CTL.causal_tree.ctl_trigger.adaptive_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_base_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_honest_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_val_honest_trigger import *
@@ -14,31 +15,42 @@ class CausalTree:
                  seed=724, quartile=False, old_trigger_code=False):
         self.cont = cont
         if cont:
-            if val_honest:
+            if split_size <= 0.0 and weight <= 0.0:
+                self.tree = AdaptiveTriggerTree(min_size=min_size, max_depth=max_depth,
+                                                split_size=split_size, weight=weight, seed=seed,
+                                                quartile=quartile, old_trigger_code=old_trigger_code)
+            elif val_honest and weight > 0.0:
                 self.tree = TriggerTreeHonestValidation(min_size=min_size, max_depth=max_depth,
                                                         split_size=split_size, weight=weight, seed=seed,
                                                         quartile=quartile, old_trigger_code=old_trigger_code)
-            elif honest:
+            elif honest and weight > 0.0:
                 self.tree = TriggerTreeHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
                                               weight=weight, seed=seed, quartile=quartile,
                                               old_trigger_code=old_trigger_code)
-            else:
+            elif weight > 0.0 and split_size > 0.0:
                 self.tree = TriggerTreeBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
                                             weight=weight, seed=seed, quartile=quartile,
                                             old_trigger_code=old_trigger_code)
+            else:
+                self.tree = AdaptiveTriggerTree(min_size=min_size, max_depth=max_depth,
+                                                split_size=split_size, weight=weight, seed=seed,
+                                                quartile=quartile, old_trigger_code=old_trigger_code)
         else:
-            if split_size <= 0 or weight <= 0:
+            if split_size <= 0.0 and weight <= 0.0:
                 self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
                                          split_size=split_size, weight=weight, seed=seed)
-            elif val_honest:
+            elif val_honest and weight > 0.0:
                 self.tree = CausalTreeLearnHonestValidation(min_size=min_size, max_depth=max_depth,
                                                             split_size=split_size, weight=weight, seed=seed)
-            elif honest:
+            elif honest and weight > 0.0:
                 self.tree = CausalTreeLearnHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
                                                   weight=weight, seed=seed)
-            else:
+            elif weight > 0.0 and split_size > 0.0:
                 self.tree = CausalTreeLearnBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
                                                 weight=weight, seed=seed)
+            else:
+                self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
+                                         split_size=split_size, weight=weight, seed=seed)
 
         self.column_num = 0
         self.fitted = False

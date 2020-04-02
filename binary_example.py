@@ -41,6 +41,11 @@ cthv = CausalTree(val_honest=True)
 cthv.fit(x_train, y_train, treat_train)
 cthv_predict = cthv.predict(x_test)
 
+# adaptive CT
+ct_adaptive = CausalTree(weight=0.0, split_size=0.0)
+ct_adaptive.fit(x_train, y_train, treat_train)
+ct_adaptive_predict = cthv.predict(x_test)
+
 print(ctl.tree_depth)
 print(ctl_predict)
 

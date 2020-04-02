@@ -30,6 +30,11 @@ cthv = CausalTree(cont=True, val_honest=True)
 cthv.fit(x_train, y_train, treat_train)
 cthv_predict = cthv.predict(x_test)
 
+# adaptive CT
+ct_adaptive = CausalTree(weight=0.0, split_size=0.0, cont=True)
+ct_adaptive.fit(x_train, y_train, treat_train)
+ct_adaptive_predict = cthv.predict(x_test)
+
 # to get which examples are in which leaf
 groups = cthv.get_groups(x_test)
 
