@@ -51,7 +51,7 @@ def tau_squared_trigger(outcome, treatment, min_size=1, quartile=False):
     """Continuous case"""
     total = outcome.shape[0]
 
-    return_val = (-np.inf, -np.inf, -np.inf)
+    return_val = (-np.inf, -np.inf)
 
     if total == 0:
         return return_val
@@ -63,6 +63,12 @@ def tau_squared_trigger(outcome, treatment, min_size=1, quartile=False):
 
     unique_treatment = (unique_treatment[1:] + unique_treatment[:-1]) / 2
     unique_treatment = unique_treatment[1:-1]
+
+    if quartile:
+        first_quartile = int(np.floor(unique_treatment.shape[0] / 4))
+        third_quartile = int(np.ceil(3 * unique_treatment.shape[0] / 4))
+
+        unique_treatment = unique_treatment[first_quartile:third_quartile]
 
     yy = np.tile(outcome, (unique_treatment.shape[0], 1))
     tt = np.tile(treatment, (unique_treatment.shape[0], 1))
