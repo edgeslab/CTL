@@ -2,9 +2,6 @@ output/
 __pycache__/
 .DS_store
 .idea/
-build/
-causal_tree_learn.egg-info
-dist
 /backup/
 
 test_script.py
