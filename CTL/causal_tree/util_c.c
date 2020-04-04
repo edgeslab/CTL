@@ -8,7 +8,8 @@
             "/Users/christran/anaconda3/lib/python3.7/site-packages/numpy/core/include/numpy/ufuncobject.h"
         ],
         "include_dirs": [
-            "/Users/christran/anaconda3/lib/python3.7/site-packages/numpy/core/include"
+            "/Users/christran/anaconda3/lib/python3.7/site-packages/numpy/core/include",
+            "."
         ],
         "name": "CTL.causal_tree.util_c",
         "sources": [
