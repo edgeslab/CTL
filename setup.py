@@ -26,10 +26,15 @@ if use_cython:
     ]
     cmdclass.update({'build_ext': build_ext})
 else:
+    # ext_modules = [
+    #     Extension(name="CTL.causal_tree.util_c", sources=["CTL/causal_tree/util_c.pyx",  "CTL/causal_tree/util_c.c"],
+    #               include_dirs=[np.get_include(), "."]),
+    # ]
     ext_modules = [
-        Extension(name="CTL.causal_tree.util_c", sources=["CTL/causal_tree/util_c.pyx",  "CTL/causal_tree/util_c.c"],
+        Extension(name="CTL.causal_tree.util_c", sources=["CTL/causal_tree/util_c.c"],
                   include_dirs=[np.get_include(), "."]),
     ]
+
 
 setup(
     name="causal_tree_learn",
