@@ -57,7 +57,8 @@ setup(
                       ],
     python_requires='>=3.6',
     ext_modules=cythonize(ext_modules),
-    cmdclass={'build_ext': build_ext},
+    # cmdclass={'build_ext': build_ext},
+    cmdclass=cmdclass,
     setup_requires=["cython", "numpy"],
     package_data={"CTL.causal_tree": ["util_c.c", "util_c.pyx"]}
 )
