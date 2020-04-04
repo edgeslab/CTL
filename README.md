@@ -13,8 +13,15 @@ Our method is based on and adapted from: https://github.com/susanathey/causalTre
 
 ## Installation
 
+through pip
+
 ```bash
 pip install causal_tree_learn
+```
+
+or clone the repository
+```bash
+python setup.py build_ext --inplace
 ```
 
 ## Demo Code

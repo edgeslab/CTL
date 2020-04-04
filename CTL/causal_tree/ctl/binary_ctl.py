@@ -1,5 +1,8 @@
-from CTL.causal_tree.util import *
-# from CTL.causal_tree.util_c import *
+# from CTL.causal_tree.util import *
+try:
+    from CTL.causal_tree.util_c import *
+except:
+    from CTL.causal_tree.util import *
 from CTL.causal_tree.causal_tree import *
 import numpy as np
 
