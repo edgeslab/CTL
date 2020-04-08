@@ -8,7 +8,8 @@
             "/Users/christran/anaconda3/lib/python3.7/site-packages/numpy/core/include/numpy/ufuncobject.h"
         ],
         "include_dirs": [
-            "/Users/christran/anaconda3/lib/python3.7/site-packages/numpy/core/include"
+            "/Users/christran/anaconda3/lib/python3.7/site-packages/numpy/core/include",
+            "."
         ],
         "name": "CTL.causal_tree.util_c",
         "sources": [
@@ -2371,7 +2372,7 @@ static PyObject *__pyx_pf_3CTL_11causal_tree_6util_c_check_dir(CYTHON_UNUSED PyO
  * 
  * def divide_set(x, y, t, col, value):             # <<<<<<<<<<<<<<
  *     idx1 = x[:, col] >= value
- *     idx2 = ~idx1
+ *     idx2 = x[:, col] < value
  */
 
 /* Python wrapper */
@@ -2488,7 +2489,7 @@ static PyObject *__pyx_pf_3CTL_11causal_tree_6util_c_2divide_set(CYTHON_UNUSED P
  * 
  * def divide_set(x, y, t, col, value):
  *     idx1 = x[:, col] >= value             # <<<<<<<<<<<<<<
- *     idx2 = ~idx1
+ *     idx2 = x[:, col] < value
  * 
  */
   __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
@@ -2510,17 +2511,28 @@ static PyObject *__pyx_pf_3CTL_11causal_tree_6util_c_2divide_set(CYTHON_UNUSED P
   /* "CTL/causal_tree/util_c.pyx":27
  * def divide_set(x, y, t, col, value):
  *     idx1 = x[:, col] >= value
- *     idx2 = ~idx1             # <<<<<<<<<<<<<<
+ *     idx2 = x[:, col] < value             # <<<<<<<<<<<<<<
  * 
  *     x1 = x[idx1]
  */
-  __pyx_t_1 = PyNumber_Invert(__pyx_v_idx1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(__pyx_slice_);
+  __Pyx_GIVEREF(__pyx_slice_);
+  PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_slice_);
+  __Pyx_INCREF(__pyx_v_col);
+  __Pyx_GIVEREF(__pyx_v_col);
+  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_col);
+  __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_x, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = PyObject_RichCompare(__pyx_t_2, __pyx_v_value, Py_LT); __Pyx_XGOTREF(__pyx_t_1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_idx2 = __pyx_t_1;
   __pyx_t_1 = 0;
 
   /* "CTL/causal_tree/util_c.pyx":29
- *     idx2 = ~idx1
+ *     idx2 = x[:, col] < value
  * 
  *     x1 = x[idx1]             # <<<<<<<<<<<<<<
  *     x2 = x[idx2]
@@ -2628,7 +2640,7 @@ static PyObject *__pyx_pf_3CTL_11causal_tree_6util_c_2divide_set(CYTHON_UNUSED P
  * 
  * def divide_set(x, y, t, col, value):             # <<<<<<<<<<<<<<
  *     idx1 = x[:, col] >= value
- *     idx2 = ~idx1
+ *     idx2 = x[:, col] < value
  */
 
   /* function exit code */
@@ -11383,7 +11395,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * def divide_set(x, y, t, col, value):
  *     idx1 = x[:, col] >= value             # <<<<<<<<<<<<<<
- *     idx2 = ~idx1
+ *     idx2 = x[:, col] < value
  * 
  */
   __pyx_slice_ = PySlice_New(Py_None, Py_None, Py_None); if (unlikely(!__pyx_slice_)) __PYX_ERR(0, 26, __pyx_L1_error)
@@ -11509,7 +11521,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * def divide_set(x, y, t, col, value):             # <<<<<<<<<<<<<<
  *     idx1 = x[:, col] >= value
- *     idx2 = ~idx1
+ *     idx2 = x[:, col] < value
  */
   __pyx_tuple__14 = PyTuple_Pack(13, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_t, __pyx_n_s_col, __pyx_n_s_value, __pyx_n_s_idx1, __pyx_n_s_idx2, __pyx_n_s_x1, __pyx_n_s_x2, __pyx_n_s_y1, __pyx_n_s_y2, __pyx_n_s_t1, __pyx_n_s_t2); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__14);
@@ -11943,7 +11955,7 @@ if (!__Pyx_RefNanny) {
  * 
  * def divide_set(x, y, t, col, value):             # <<<<<<<<<<<<<<
  *     idx1 = x[:, col] >= value
- *     idx2 = ~idx1
+ *     idx2 = x[:, col] < value
  */
   __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_3CTL_11causal_tree_6util_c_3divide_set, NULL, __pyx_n_s_CTL_causal_tree_util_c); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);

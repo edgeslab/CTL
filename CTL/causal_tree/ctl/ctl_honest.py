@@ -85,7 +85,8 @@ class CausalTreeLearnHonest(CausalTreeLearn):
 
         self._fit(self.root, train_x, train_y, train_t, val_x, val_y, val_t, est_x, est_y, est_t)
 
-    def _fit(self, node: HonestCausalTreeLearnNode, train_x, train_y, train_t, val_x, val_y, val_t, est_x, est_y, est_t):
+    def _fit(self, node: HonestCausalTreeLearnNode, train_x, train_y, train_t, val_x, val_y, val_t,
+             est_x, est_y, est_t):
 
         if train_x.shape[0] == 0 or val_x.shape[0] == 0 or est_x.shape[0] == 0:
             return node
@@ -194,15 +195,17 @@ class CausalTreeLearnHonest(CausalTreeLearn):
                 # Ignore "mse" here, come back to it later?
                 # ----------------------------------------------------------------
 
-                tb = HonestCausalTreeLearnNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val, node_depth=node.node_depth + 1,
+                tb = HonestCausalTreeLearnNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
+                                               node_depth=node.node_depth + 1,
                                                var=best_tb_var, num_samples=est_x1.shape[0])
-                fb = HonestCausalTreeLearnNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val, node_depth=node.node_depth + 1,
+                fb = HonestCausalTreeLearnNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
+                                               node_depth=node.node_depth + 1,
                                                var=best_tb_var, num_samples=est_x2.shape[0])
 
                 node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1,
                                              est_x1, est_y1, est_t1)
                 node.false_branch = self._fit(fb, train_x2, train_y2, train_t2, val_x2, val_y2, val_t2,
-                                              est_x1, est_y2, est_t2)
+                                              est_x2, est_y2, est_t2)
 
                 if node.effect > self.max_effect:
                     self.max_effect = node.effect

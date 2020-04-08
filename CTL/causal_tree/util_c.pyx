@@ -24,7 +24,7 @@ def check_dir(path):
 
 def divide_set(x, y, t, col, value):
     idx1 = x[:, col] >= value
-    idx2 = ~idx1
+    idx2 = x[:, col] < value
 
     x1 = x[idx1]
     x2 = x[idx2]

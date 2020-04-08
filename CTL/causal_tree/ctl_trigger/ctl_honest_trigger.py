@@ -193,7 +193,7 @@ class TriggerTreeHonest(TriggerTree):
                 node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1,
                                              est_x1, est_y1, est_t1)
                 node.false_branch = self._fit(fb, train_x2, train_y2, train_t2, val_x2, val_y2, val_t2,
-                                              est_x1, est_y2, est_t2)
+                                              est_x2, est_y2, est_t2)
 
                 if node.effect > self.max_effect:
                     self.max_effect = node.effect
