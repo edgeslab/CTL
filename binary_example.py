@@ -49,4 +49,4 @@ ct_adaptive_predict = cthv.predict(x_test)
 print(ctl.tree_depth)
 print(ctl_predict)
 
-cthv.plot_tree(features=columns, filename="output/bin_tree", show_effect=True)
+ctl.plot_tree(features=columns, filename="output/bin_tree", show_effect=True)

@@ -351,6 +351,9 @@ class CausalTree:
 
         _assign_feature_names(self.tree.root, variable_names)
 
+    def get_features_used(self, variable_names=None, cat=False):
+        return self.get_variables_used(variable_names, cat)
+
     def get_variables_used(self, variable_names=None, cat=False):
 
         if self.tree.features is None:

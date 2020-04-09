@@ -69,10 +69,16 @@ class CausalTreeLearn(CausalTree):
         train_effect = ace(train_y, train_t)
         val_effect = ace(val_y, val_t)
 
-        train_mse = (1 - self.weight) * total_train * (train_effect ** 2)
-        cost = self.weight * total_val * np.abs(train_effect - val_effect)
+        # train_mse = (1 - self.weight) * total_train * (train_effect ** 2)
+        # cost = self.weight * total_val * np.abs(train_effect - val_effect)
+        #
+        # obj = (train_mse - cost) / (np.abs(total_train - total_val) + 1)
+        # mse = total_train * (train_effect ** 2)
 
-        obj = (train_mse - cost) / (np.abs(total_train - total_val) + 1)
+        train_mse = (1 - self.weight) * (train_effect ** 2)
+        cost = self.weight * np.abs(train_effect - val_effect)
+
+        obj = train_mse - cost
         mse = total_train * (train_effect ** 2)
 
         return obj, mse

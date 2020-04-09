@@ -80,7 +80,7 @@ class TriggerTreeBase(TriggerTree):
         best_tb_obj, best_fb_obj = (0.0, 0.0)
         best_tb_trigger, best_fb_trigger = (0.0, 0.0)
 
-        column_count = train_x.shape[0]
+        column_count = train_x.shape[1]
         for col in range(0, column_count):
             unique_vals = np.unique(train_x[:, col])
 
@@ -108,56 +108,58 @@ class TriggerTreeBase(TriggerTree):
                     best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
                     best_tb_trigger, best_fb_trigger = (tb_trigger, fb_trigger)
 
-            if best_gain > 0:
-                node.col = best_attributes[0]
-                node.value = best_attributes[1]
+        if best_gain > 0:
+            node.col = best_attributes[0]
+            node.value = best_attributes[1]
 
-                (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
-                    = divide_set(train_x, train_y, train_t, node.col, node.value)
+            # print(node.col)
 
-                (val_x1, val_x2, val_y1, val_y2, val_t1, val_t2) \
-                    = divide_set(val_x, val_y, val_t, node.col, node.value)
+            (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
+                = divide_set(train_x, train_y, train_t, node.col, node.value)
 
-                y1 = np.concatenate((train_y1, val_y1))
-                y2 = np.concatenate((train_y2, val_y2))
-                t1 = np.concatenate((train_t1, val_t1))
-                t2 = np.concatenate((train_t2, val_t2))
+            (val_x1, val_x2, val_y1, val_y2, val_t1, val_t2) \
+                = divide_set(val_x, val_y, val_t, node.col, node.value)
 
-                best_tb_effect = ace_trigger(y1, t1, best_tb_trigger)
-                best_fb_effect = ace_trigger(y2, t2, best_fb_trigger)
-                tb_p_val = get_pval_trigger(y1, t1, best_tb_trigger)
-                fb_p_val = get_pval_trigger(y2, t2, best_fb_trigger)
+            y1 = np.concatenate((train_y1, val_y1))
+            y2 = np.concatenate((train_y2, val_y2))
+            t1 = np.concatenate((train_t1, val_t1))
+            t2 = np.concatenate((train_t2, val_t2))
 
-                self.obj = self.obj - node.obj + best_tb_obj + best_fb_obj
+            best_tb_effect = ace_trigger(y1, t1, best_tb_trigger)
+            best_fb_effect = ace_trigger(y2, t2, best_fb_trigger)
+            tb_p_val = get_pval_trigger(y1, t1, best_tb_trigger)
+            fb_p_val = get_pval_trigger(y2, t2, best_fb_trigger)
 
-                # ----------------------------------------------------------------
-                # Ignore "mse" here, come back to it later?
-                # ----------------------------------------------------------------
+            self.obj = self.obj - node.obj + best_tb_obj + best_fb_obj
 
-                tb = TriggerBaseNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
-                                     node_depth=node.node_depth + 1,
-                                     num_samples=y1.shape[0], trigger=best_tb_trigger)
-                fb = TriggerBaseNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
-                                     node_depth=node.node_depth + 1,
-                                     num_samples=y2.shape[0], trigger=best_fb_trigger)
+            # ----------------------------------------------------------------
+            # Ignore "mse" here, come back to it later?
+            # ----------------------------------------------------------------
 
-                node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1)
-                node.false_branch = self._fit(fb, train_x2, train_y2, train_t2, val_x2, val_y2, val_t2)
+            tb = TriggerBaseNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
+                                 node_depth=node.node_depth + 1,
+                                 num_samples=y1.shape[0], trigger=best_tb_trigger)
+            fb = TriggerBaseNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
+                                 node_depth=node.node_depth + 1,
+                                 num_samples=y2.shape[0], trigger=best_fb_trigger)
 
-                if node.effect > self.max_effect:
-                    self.max_effect = node.effect
-                else:
-                    self.min_effect = node.effect
+            node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1)
+            node.false_branch = self._fit(fb, train_x2, train_y2, train_t2, val_x2, val_y2, val_t2)
 
-                return node
-
+            if node.effect > self.max_effect:
+                self.max_effect = node.effect
             else:
-                if node.effect > self.max_effect:
-                    self.max_effect = node.effect
-                if node.effect < self.min_effect:
-                    self.min_effect = node.effect
+                self.min_effect = node.effect
 
-                self.num_leaves += 1
-                node.leaf_num = self.num_leaves
-                node.is_leaf = True
-                return node
+            return node
+
+        else:
+            if node.effect > self.max_effect:
+                self.max_effect = node.effect
+            if node.effect < self.min_effect:
+                self.min_effect = node.effect
+
+            self.num_leaves += 1
+            node.leaf_num = self.num_leaves
+            node.is_leaf = True
+            return node
