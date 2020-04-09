@@ -200,8 +200,6 @@ class CausalTreeLearn(CausalTree):
                     if tb.node_depth == self.tree_depth:
                         self.tree_depth = self.tree_depth - 1
 
-                    _prune(tb)
-
         _prune(self.root)
 
     def get_triggers(self, x):

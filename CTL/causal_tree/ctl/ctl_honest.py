@@ -182,7 +182,7 @@ class CausalTreeLearnHonest(CausalTreeLearn):
                 = divide_set(val_x, val_y, val_t, node.col, node.value)
 
             (est_x1, est_x2, est_y1, est_y2, est_t1, est_t2) \
-                = divide_set(est_x, est_y, est_t, col, node.value)
+                = divide_set(est_x, est_y, est_t, node.col, node.value)
 
             best_tb_effect = ace(est_y1, est_t1)
             best_fb_effect = ace(est_y2, est_t2)
