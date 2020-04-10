@@ -88,34 +88,45 @@ class CausalTreeLearnBase(CausalTreeLearn):
             # TODO: Max values stuff
             # ----------------------------------------------------------------
 
-            for value in unique_vals:
-
-                (val_x1, val_x2, val_y1, val_y2, val_t1, val_t2) \
-                    = divide_set(val_x, val_y, val_t, col, value)
-
-                # check validation set size
-                val_size = self.val_split * self.min_size if self.val_split * self.min_size > 2 else 2
-                if check_min_size(val_size, val_t1) or check_min_size(val_size, val_t2):
-                    continue
-
-                # check training data size
-                (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
-                    = divide_set(train_x, train_y, train_t, col, value)
-                check1 = check_min_size(self.min_size, train_t1)
-                check2 = check_min_size(self.min_size, train_t2)
-                if check1 or check2:
-                    continue
-
-                tb_eval, tb_mse = self._eval(train_y1, train_t1, val_y1, val_t1)
-                fb_eval, fb_mse = self._eval(train_y2, train_t2, val_y2, val_t2)
-
-                split_eval = (tb_eval + fb_eval)
-                gain = -node.obj + split_eval
-
+            # using the faster evaluation with vector/matrix calculations
+            try:
+                split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y, val_t,
+                                                                         unique_vals, col)
+                gain = -node.obj + split_obj
                 if gain > best_gain:
                     best_gain = gain
                     best_attributes = [col, value]
-                    best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
+                    best_tb_obj, best_fb_obj = (upper_obj, lower_obj)
+            # if that fails (due to memory maybe?) then use the old calculation
+            except:
+                for value in unique_vals:
+
+                    (val_x1, val_x2, val_y1, val_y2, val_t1, val_t2) \
+                        = divide_set(val_x, val_y, val_t, col, value)
+
+                    # check validation set size
+                    val_size = self.val_split * self.min_size if self.val_split * self.min_size > 2 else 2
+                    if check_min_size(val_size, val_t1) or check_min_size(val_size, val_t2):
+                        continue
+
+                    # check training data size
+                    (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
+                        = divide_set(train_x, train_y, train_t, col, value)
+                    check1 = check_min_size(self.min_size, train_t1)
+                    check2 = check_min_size(self.min_size, train_t2)
+                    if check1 or check2:
+                        continue
+
+                    tb_eval, tb_mse = self._eval(train_y1, train_t1, val_y1, val_t1)
+                    fb_eval, fb_mse = self._eval(train_y2, train_t2, val_y2, val_t2)
+
+                    split_eval = (tb_eval + fb_eval)
+                    gain = -node.obj + split_eval
+
+                    if gain > best_gain:
+                        best_gain = gain
+                        best_attributes = [col, value]
+                        best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
 
         if best_gain > 0:
             node.col = best_attributes[0]

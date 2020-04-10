@@ -115,25 +115,12 @@ class CausalTreeLearnHonestValidation(CausalTreeLearn):
             # TODO: Max values stuff
             # ----------------------------------------------------------------
 
-            for value in unique_vals:
+            try:
+                split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y, val_t,
+                                                                         unique_vals, col)
 
-                (val_x1, val_x2, val_y1, val_y2, val_t1, val_t2) \
-                    = divide_set(val_x, val_y, val_t, col, value)
-
-                # check validation size
-                val_size = self.val_split * self.min_size if self.val_split * self.min_size > 2 else 2
-                val_nt1, val_nc1, val_check1 = min_size_value_bool(val_size, val_t1)
-                val_nt2, val_nc2, val_check2 = min_size_value_bool(val_size, val_t2)
-                if val_check1 or val_check2:
-                    continue
-
-                # check training size
                 (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
                     = divide_set(train_x, train_y, train_t, col, value)
-                train_nt1, train_nc1, train_check1 = min_size_value_bool(self.min_size, train_t1)
-                train_nt2, train_nc2, train_check2 = min_size_value_bool(self.min_size, train_t2)
-                if train_check1 or train_check2:
-                    continue
 
                 # ----------------------------------------------------------------
                 # Honest penalty
@@ -149,21 +136,65 @@ class CausalTreeLearnHonestValidation(CausalTreeLearn):
                 fb_var = (1 + self.train_to_est_ratio) * (
                         (var_treat2 / self.treated_share) + (var_control2 / (1 - self.treated_share)))
 
-                # ----------------------------------------------------------------
-                # Regular objective
-                # ----------------------------------------------------------------
-                tb_eval, tb_mse = self._eval(train_y1, train_t1, val_y1, val_t1)
-                fb_eval, fb_mse = self._eval(train_y2, train_t2, val_y2, val_t2)
-
                 # combine honest and our objective
-                split_eval = (tb_eval + fb_eval) - (tb_var + fb_var)
+                split_eval = (upper_obj + lower_obj) - (tb_var + fb_var)
                 gain = -(node.obj - node.var) + split_eval
 
                 if gain > best_gain:
                     best_gain = gain
                     best_attributes = [col, value]
-                    best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
+                    best_tb_obj, best_fb_obj = (upper_obj, lower_obj)
                     best_tb_var, best_fb_var = (tb_var, fb_var)
+            except:
+                for value in unique_vals:
+
+                    (val_x1, val_x2, val_y1, val_y2, val_t1, val_t2) \
+                        = divide_set(val_x, val_y, val_t, col, value)
+
+                    # check validation size
+                    val_size = self.val_split * self.min_size if self.val_split * self.min_size > 2 else 2
+                    val_nt1, val_nc1, val_check1 = min_size_value_bool(val_size, val_t1)
+                    val_nt2, val_nc2, val_check2 = min_size_value_bool(val_size, val_t2)
+                    if val_check1 or val_check2:
+                        continue
+
+                    # check training size
+                    (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
+                        = divide_set(train_x, train_y, train_t, col, value)
+                    train_nt1, train_nc1, train_check1 = min_size_value_bool(self.min_size, train_t1)
+                    train_nt2, train_nc2, train_check2 = min_size_value_bool(self.min_size, train_t2)
+                    if train_check1 or train_check2:
+                        continue
+
+                    # ----------------------------------------------------------------
+                    # Honest penalty
+                    # ----------------------------------------------------------------
+                    var_treat1, var_control1 = variance(train_y1, train_t1)
+                    var_treat2, var_control2 = variance(train_y2, train_t2)
+                    # tb_var = (1 + self.train_to_est_ratio) * (
+                    #         (var_treat1 / (train_nt1 + 1)) + (var_control1 / (train_nc1 + 1)))
+                    # fb_var = (1 + self.train_to_est_ratio) * (
+                    #         (var_treat2 / (train_nt2 + 1)) + (var_control2 / (train_nc2 + 1)))
+                    tb_var = (1 + self.train_to_est_ratio) * (
+                            (var_treat1 / self.treated_share) + (var_control1 / (1 - self.treated_share)))
+                    fb_var = (1 + self.train_to_est_ratio) * (
+                            (var_treat2 / self.treated_share) + (var_control2 / (1 - self.treated_share)))
+
+                    # ----------------------------------------------------------------
+                    # Regular objective
+                    # ----------------------------------------------------------------
+                    tb_eval, tb_mse = self._eval(train_y1, train_t1, val_y1, val_t1)
+                    fb_eval, fb_mse = self._eval(train_y2, train_t2, val_y2, val_t2)
+
+                    # combine honest and our objective
+                    split_eval = (tb_eval + fb_eval) - (tb_var + fb_var)
+                    gain = -(node.obj - node.var) + split_eval
+
+                    if gain > best_gain:
+                        best_gain = gain
+                        best_attributes = [col, value]
+                        best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
+                        best_tb_var, best_fb_var = (tb_var, fb_var)
 
         if best_gain > 0:
             node.col = best_attributes[0]
