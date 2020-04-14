@@ -12,3 +12,4 @@ test_cython_trigger.py
 test_cython_binary.py
 test_cython.py
 binary_example_random.py
+test_trigger.py

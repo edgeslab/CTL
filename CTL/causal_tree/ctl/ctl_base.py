@@ -90,13 +90,25 @@ class CausalTreeLearnBase(CausalTreeLearn):
 
             # using the faster evaluation with vector/matrix calculations
             try:
-                split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y, val_t,
-                                                                         unique_vals, col)
-                gain = -node.obj + split_obj
-                if gain > best_gain:
-                    best_gain = gain
-                    best_attributes = [col, value]
-                    best_tb_obj, best_fb_obj = (upper_obj, lower_obj)
+
+                if self.feature_batch_size is None:
+                    split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y, val_t,
+                                                                             unique_vals, col)
+                    gain = -node.obj + split_obj
+                    if gain > best_gain:
+                        best_gain = gain
+                        best_attributes = [col, value]
+                        best_tb_obj, best_fb_obj = (upper_obj, lower_obj)
+                else:
+
+                    for x in batch(unique_vals, self.feature_batch_size):
+                        split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y, val_t, x, col)
+
+                        gain = -node.obj + split_obj
+                        if gain > best_gain:
+                            best_gain = gain
+                            best_attributes = [col, value]
+                            best_tb_obj, best_fb_obj = (upper_obj, lower_obj)
             # if that fails (due to memory maybe?) then use the old calculation
             except:
                 for value in unique_vals:

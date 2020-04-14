@@ -14,6 +14,11 @@ cimport numpy as np
 # General helper functions
 # ----------------------------------------------------------------
 
+def batch(iterable, n=1):
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        yield iterable[ndx:min(ndx + n, l)]
+
 def check_dir(path):
     if not os.path.exists(os.path.dirname(path)):
         try:
@@ -36,6 +41,13 @@ def divide_set(x, y, t, col, value):
     t2 = t[idx2]
 
     return x1, x2, y1, y2, t1, t2
+
+def yield_divide(x, y, t, col, unique_vals):
+    for value in unique_vals:
+        idx1 = x[:, col] >= value
+        idx2 = ~idx1
+
+        yield x[idx1], x[idx2], y[idx1], y[idx2], t[idx1], t[idx2]
 
 def col_dict(names):
     feat_names = {}
@@ -378,7 +390,7 @@ cpdef tau_squared_trigger(np.ndarray[np.float_t, ndim=1] y, np.ndarray[np.float_
     yy = np.tile(y, (unique_treatment.shape[0], 1))
     tt = np.tile(t, (unique_treatment.shape[0], 1))
 
-    x = np.transpose(np.transpose(tt) > unique_treatment)
+    x = np.transpose(np.transpose(tt) >= unique_treatment)
 
     tt[x] = 1
     tt[np.logical_not(x)] = 0

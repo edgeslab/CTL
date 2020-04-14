@@ -116,35 +116,68 @@ class CausalTreeLearnHonestValidation(CausalTreeLearn):
             # ----------------------------------------------------------------
 
             try:
-                split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y, val_t,
-                                                                         unique_vals, col)
+                if self.feature_batch_size is None:
+                    split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y,
+                                                                             val_t,
+                                                                             unique_vals, col)
 
-                (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
-                    = divide_set(train_x, train_y, train_t, col, value)
+                    (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
+                        = divide_set(train_x, train_y, train_t, col, value)
 
-                # ----------------------------------------------------------------
-                # Honest penalty
-                # ----------------------------------------------------------------
-                var_treat1, var_control1 = variance(train_y1, train_t1)
-                var_treat2, var_control2 = variance(train_y2, train_t2)
-                # tb_var = (1 + self.train_to_est_ratio) * (
-                #         (var_treat1 / (train_nt1 + 1)) + (var_control1 / (train_nc1 + 1)))
-                # fb_var = (1 + self.train_to_est_ratio) * (
-                #         (var_treat2 / (train_nt2 + 1)) + (var_control2 / (train_nc2 + 1)))
-                tb_var = (1 + self.train_to_est_ratio) * (
-                        (var_treat1 / self.treated_share) + (var_control1 / (1 - self.treated_share)))
-                fb_var = (1 + self.train_to_est_ratio) * (
-                        (var_treat2 / self.treated_share) + (var_control2 / (1 - self.treated_share)))
+                    # ----------------------------------------------------------------
+                    # Honest penalty
+                    # ----------------------------------------------------------------
+                    var_treat1, var_control1 = variance(train_y1, train_t1)
+                    var_treat2, var_control2 = variance(train_y2, train_t2)
+                    # tb_var = (1 + self.train_to_est_ratio) * (
+                    #         (var_treat1 / (train_nt1 + 1)) + (var_control1 / (train_nc1 + 1)))
+                    # fb_var = (1 + self.train_to_est_ratio) * (
+                    #         (var_treat2 / (train_nt2 + 1)) + (var_control2 / (train_nc2 + 1)))
+                    tb_var = (1 + self.train_to_est_ratio) * (
+                            (var_treat1 / self.treated_share) + (var_control1 / (1 - self.treated_share)))
+                    fb_var = (1 + self.train_to_est_ratio) * (
+                            (var_treat2 / self.treated_share) + (var_control2 / (1 - self.treated_share)))
 
-                # combine honest and our objective
-                split_eval = (upper_obj + lower_obj) - (tb_var + fb_var)
-                gain = -(node.obj - node.var) + split_eval
+                    # combine honest and our objective
+                    split_eval = (upper_obj + lower_obj) - (tb_var + fb_var)
+                    gain = -(node.obj - node.var) + split_eval
 
-                if gain > best_gain:
-                    best_gain = gain
-                    best_attributes = [col, value]
-                    best_tb_obj, best_fb_obj = (upper_obj, lower_obj)
-                    best_tb_var, best_fb_var = (tb_var, fb_var)
+                    if gain > best_gain:
+                        best_gain = gain
+                        best_attributes = [col, value]
+                        best_tb_obj, best_fb_obj = (upper_obj, lower_obj)
+                        best_tb_var, best_fb_var = (tb_var, fb_var)
+                else:
+                    for x in batch(unique_vals, self.feature_batch_size):
+                        split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x,
+                                                                                 val_y, val_t, x, col)
+
+                        (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
+                            = divide_set(train_x, train_y, train_t, col, value)
+
+                        # ----------------------------------------------------------------
+                        # Honest penalty
+                        # ----------------------------------------------------------------
+                        var_treat1, var_control1 = variance(train_y1, train_t1)
+                        var_treat2, var_control2 = variance(train_y2, train_t2)
+                        # tb_var = (1 + self.train_to_est_ratio) * (
+                        #         (var_treat1 / (train_nt1 + 1)) + (var_control1 / (train_nc1 + 1)))
+                        # fb_var = (1 + self.train_to_est_ratio) * (
+                        #         (var_treat2 / (train_nt2 + 1)) + (var_control2 / (train_nc2 + 1)))
+                        tb_var = (1 + self.train_to_est_ratio) * (
+                                (var_treat1 / self.treated_share) + (var_control1 / (1 - self.treated_share)))
+                        fb_var = (1 + self.train_to_est_ratio) * (
+                                (var_treat2 / self.treated_share) + (var_control2 / (1 - self.treated_share)))
+
+                        # combine honest and our objective
+                        split_eval = (upper_obj + lower_obj) - (tb_var + fb_var)
+                        gain = -(node.obj - node.var) + split_eval
+
+                        if gain > best_gain:
+                            best_gain = gain
+                            best_attributes = [col, value]
+                            best_tb_obj, best_fb_obj = (upper_obj, lower_obj)
+                            best_tb_var, best_fb_var = (tb_var, fb_var)
             except:
                 for value in unique_vals:
 

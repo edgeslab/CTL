@@ -12,7 +12,7 @@ from CTL.causal_tree.ctl_trigger.ctl_val_honest_trigger import *
 class CausalTree:
 
     def __init__(self, cont=False, val_honest=False, honest=False, min_size=2, max_depth=-1, split_size=0.5, weight=0.5,
-                 seed=724, quartile=False, old_trigger_code=False):
+                 seed=724, quartile=False, old_trigger_code=False, feature_batch_size=None):
         self.cont = cont
         if cont:
             if split_size <= 0.0 and weight <= 0.0:
@@ -41,13 +41,14 @@ class CausalTree:
                                          split_size=split_size, weight=weight, seed=seed)
             elif val_honest and weight > 0.0:
                 self.tree = CausalTreeLearnHonestValidation(min_size=min_size, max_depth=max_depth,
-                                                            split_size=split_size, weight=weight, seed=seed)
+                                                            split_size=split_size, weight=weight, seed=seed,
+                                                            feature_batch_size=feature_batch_size)
             elif honest and weight > 0.0:
                 self.tree = CausalTreeLearnHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                                                  weight=weight, seed=seed)
+                                                  weight=weight, seed=seed, feature_batch_size=feature_batch_size)
             elif weight > 0.0 and split_size > 0.0:
                 self.tree = CausalTreeLearnBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                                                weight=weight, seed=seed)
+                                                weight=weight, seed=seed, feature_batch_size=feature_batch_size)
             else:
                 self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
                                          split_size=split_size, weight=weight, seed=seed)

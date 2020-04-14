@@ -112,8 +112,6 @@ class TriggerTreeBase(TriggerTree):
             node.col = best_attributes[0]
             node.value = best_attributes[1]
 
-            # print(node.col)
-
             (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
                 = divide_set(train_x, train_y, train_t, node.col, node.value)
 
