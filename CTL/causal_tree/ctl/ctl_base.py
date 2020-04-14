@@ -90,9 +90,9 @@ class CausalTreeLearnBase(CausalTreeLearn):
 
             # using the faster evaluation with vector/matrix calculations
             try:
-
                 if self.feature_batch_size is None:
-                    split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y, val_t,
+                    split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y,
+                                                                             val_t,
                                                                              unique_vals, col)
                     gain = -node.obj + split_obj
                     if gain > best_gain:
@@ -102,7 +102,8 @@ class CausalTreeLearnBase(CausalTreeLearn):
                 else:
 
                     for x in batch(unique_vals, self.feature_batch_size):
-                        split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x, val_y, val_t, x, col)
+                        split_obj, upper_obj, lower_obj, value = self._eval_fast(train_x, train_y, train_t, val_x,
+                                                                                 val_y, val_t, x, col)
 
                         gain = -node.obj + split_obj
                         if gain > best_gain:

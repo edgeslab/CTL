@@ -29,24 +29,25 @@ x_train, x_test, y_train, y_test, treat_train, treat_test = train_test_split(x, 
 # regular CTL
 ctl = CausalTree()
 ctl.fit(x_train, y_train, treat_train)
+ctl.prune()
 ctl_predict = ctl.predict(x_test)
 
 # honest CTL
 cth = CausalTree(honest=True)
 cth.fit(x_train, y_train, treat_train)
+cth.prune()
 cth_predict = cth.predict(x_test)
 
 # val honest CTL
 cthv = CausalTree(val_honest=True)
 cthv.fit(x_train, y_train, treat_train)
+cthv.prune()
 cthv_predict = cthv.predict(x_test)
 
 # adaptive CT
 ct_adaptive = CausalTree(weight=0.0, split_size=0.0)
 ct_adaptive.fit(x_train, y_train, treat_train)
+ct_adaptive.prune()
 ct_adaptive_predict = cthv.predict(x_test)
-
-print(ctl.tree_depth)
-print(ctl_predict)
 
 ctl.plot_tree(features=columns, filename="output/bin_tree", show_effect=True)
