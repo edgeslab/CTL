@@ -142,6 +142,11 @@ class CausalTreeLearn(CausalTree):
         train_denom_treated_lower = train_denom_treated_lower[min_size_idx]
         train_denom_control_lower = train_denom_control_lower[min_size_idx]
 
+        train_treat_nums_upper = train_treat_nums_upper[min_size_idx]
+        train_control_nums_upper = train_control_nums_upper[min_size_idx]
+        train_treat_nums_lower = train_treat_nums_lower[min_size_idx]
+        train_control_nums_lower = train_control_nums_lower[min_size_idx]
+
         # val_idx_x = val_idx_x[min_size_idx]
         val_yy = val_yy[min_size_idx]
         # val_tt = val_tt[min_size_idx]
@@ -150,26 +155,45 @@ class CausalTreeLearn(CausalTree):
         val_denom_treated_lower = val_denom_treated_lower[min_size_idx]
         val_denom_control_lower = val_denom_control_lower[min_size_idx]
 
-        train_um1 = np.sum(yy * train_denom_treated_upper, axis=1) / np.sum(train_denom_treated_upper, axis=1)
-        train_um0 = np.sum(yy * train_denom_control_upper, axis=1) / np.sum(train_denom_control_upper, axis=1)
+        val_treat_nums_upper = val_treat_nums_upper[min_size_idx]
+        val_control_nums_upper = val_control_nums_upper[min_size_idx]
+        val_treat_nums_lower = val_treat_nums_lower[min_size_idx]
+        val_control_nums_lower = val_control_nums_lower[min_size_idx]
+
+        # train_um1 = np.sum(yy * train_denom_treated_upper, axis=1) / np.sum(train_denom_treated_upper, axis=1)
+        # train_um0 = np.sum(yy * train_denom_control_upper, axis=1) / np.sum(train_denom_control_upper, axis=1)
+        # train_upper_effect = train_um1 - train_um0
+        # train_lm1 = np.sum(yy * train_denom_treated_lower, axis=1) / np.sum(train_denom_treated_lower, axis=1)
+        # train_lm0 = np.sum(yy * train_denom_control_lower, axis=1) / np.sum(train_denom_control_lower, axis=1)
+        # train_lower_effect = train_lm1 - train_lm0
+        train_um1 = np.sum(yy * train_denom_treated_upper, axis=1) / train_treat_nums_upper
+        train_um0 = np.sum(yy * train_denom_control_upper, axis=1) / train_control_nums_upper
         train_upper_effect = train_um1 - train_um0
-        train_lm1 = np.sum(yy * train_denom_treated_lower, axis=1) / np.sum(train_denom_treated_lower, axis=1)
-        train_lm0 = np.sum(yy * train_denom_control_lower, axis=1) / np.sum(train_denom_control_lower, axis=1)
+        train_lm1 = np.sum(yy * train_denom_treated_lower, axis=1) / train_treat_nums_lower
+        train_lm0 = np.sum(yy * train_denom_control_lower, axis=1) / train_control_nums_lower
         train_lower_effect = train_lm1 - train_lm0
 
-        val_um1 = np.sum(val_yy * val_denom_treated_upper, axis=1) / np.sum(val_denom_treated_upper, axis=1)
-        val_um0 = np.sum(val_yy * val_denom_control_upper, axis=1) / np.sum(val_denom_control_upper, axis=1)
+        # val_um1 = np.sum(val_yy * val_denom_treated_upper, axis=1) / np.sum(val_denom_treated_upper, axis=1)
+        # val_um0 = np.sum(val_yy * val_denom_control_upper, axis=1) / np.sum(val_denom_control_upper, axis=1)
+        # val_upper_effect = val_um1 - val_um0
+        # val_lm1 = np.sum(val_yy * val_denom_treated_lower, axis=1) / np.sum(val_denom_treated_lower, axis=1)
+        # val_lm0 = np.sum(val_yy * val_denom_control_lower, axis=1) / np.sum(val_denom_control_lower, axis=1)
+        # val_lower_effect = val_lm1 - val_lm0
+        val_um1 = np.sum(val_yy * val_denom_treated_upper, axis=1) / val_treat_nums_upper
+        val_um0 = np.sum(val_yy * val_denom_control_upper, axis=1) / val_control_nums_upper
         val_upper_effect = val_um1 - val_um0
-        val_lm1 = np.sum(val_yy * val_denom_treated_lower, axis=1) / np.sum(val_denom_treated_lower, axis=1)
-        val_lm0 = np.sum(val_yy * val_denom_control_lower, axis=1) / np.sum(val_denom_control_lower, axis=1)
+        val_lm1 = np.sum(val_yy * val_denom_treated_lower, axis=1) / val_treat_nums_lower
+        val_lm0 = np.sum(val_yy * val_denom_control_lower, axis=1) / val_control_nums_lower
         val_lower_effect = val_lm1 - val_lm0
 
-        train_upper_mse = train_upper_effect ** 2
-        upper_cost = np.abs(train_upper_effect - val_upper_effect)
-        upper_obj = train_upper_mse - upper_cost
-        train_lower_mse = train_lower_effect ** 2
-        lower_cost = np.abs(train_lower_effect - val_lower_effect)
-        lower_obj = train_lower_mse - lower_cost
+        train_upper_mse = (1 - self.weight) * train_upper_effect ** 2
+        upper_cost = self.weight * np.abs(train_upper_effect - val_upper_effect)
+        # upper_obj = train_upper_mse - upper_cost
+        upper_obj = (train_treat_nums_upper + train_control_nums_upper) * (train_upper_mse - upper_cost)
+
+        train_lower_mse = (1 - self.weight) * train_lower_effect ** 2
+        lower_cost = self.weight * np.abs(train_lower_effect - val_lower_effect)
+        lower_obj = (train_treat_nums_lower + train_control_nums_lower) * (train_lower_mse - lower_cost)
 
         split_obj = upper_obj + lower_obj
         best_obj_idx = np.argmax(split_obj)

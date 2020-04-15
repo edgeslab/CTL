@@ -50,4 +50,5 @@ ct_adaptive.fit(x_train, y_train, treat_train)
 ct_adaptive.prune()
 ct_adaptive_predict = cthv.predict(x_test)
 
+ct_adaptive.plot_tree(features=columns, filename="output/bin_tree_adaptive", show_effect=True)
 ctl.plot_tree(features=columns, filename="output/bin_tree", show_effect=True)

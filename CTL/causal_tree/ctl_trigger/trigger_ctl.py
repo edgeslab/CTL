@@ -150,6 +150,7 @@ class TriggerTree(CausalTreeLearn):
             train_mse = (1 - self.weight) * (train_effect ** 2)
             cost = self.weight * np.abs(train_effect - val_effect)
             obj = train_mse - cost
+            obj = total_train * obj
 
             best_obj = obj
             # best_mse = train_err

@@ -7,6 +7,7 @@ causal_tree_learn.egg-info
 dist
 /backup/
 
+test.py
 test_script.py
 test_cython_trigger.py
 test_cython_binary.py
