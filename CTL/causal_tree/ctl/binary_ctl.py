@@ -38,7 +38,8 @@ class CausalTreeLearnNode(CausalTreeNode):
 
 class CausalTreeLearn(CausalTree):
 
-    def __init__(self, weight=0.5, split_size=0.5, max_depth=-1, min_size=2, seed=724, feature_batch_size=None):
+    def __init__(self, weight=0.5, split_size=0.5, max_depth=-1, min_size=2, seed=724, feature_batch_size=None,
+                 magnitude=True):
         super().__init__()
         self.weight = weight
         self.val_split = split_size
@@ -51,6 +52,7 @@ class CausalTreeLearn(CausalTree):
 
         self.features = None
         self.feature_batch_size = feature_batch_size
+        self.magnitude = magnitude
 
         self.root = CausalTreeLearnNode()
 
@@ -80,6 +82,8 @@ class CausalTreeLearn(CausalTree):
         cost = self.weight * np.abs(train_effect - val_effect)
 
         obj = train_mse - cost
+        if self.magnitude:
+            obj = total_train * obj
         mse = total_train * (train_effect ** 2)
 
         return obj, mse
@@ -188,12 +192,15 @@ class CausalTreeLearn(CausalTree):
 
         train_upper_mse = (1 - self.weight) * train_upper_effect ** 2
         upper_cost = self.weight * np.abs(train_upper_effect - val_upper_effect)
-        # upper_obj = train_upper_mse - upper_cost
-        upper_obj = (train_treat_nums_upper + train_control_nums_upper) * (train_upper_mse - upper_cost)
+        upper_obj = train_upper_mse - upper_cost
+        if self.magnitude:
+            upper_obj = (train_treat_nums_upper + train_control_nums_upper) * upper_obj
 
         train_lower_mse = (1 - self.weight) * train_lower_effect ** 2
         lower_cost = self.weight * np.abs(train_lower_effect - val_lower_effect)
-        lower_obj = (train_treat_nums_lower + train_control_nums_lower) * (train_lower_mse - lower_cost)
+        lower_obj = train_lower_mse - lower_cost
+        if self.magnitude:
+            lower_obj = (train_treat_nums_lower + train_control_nums_lower) * lower_obj
 
         split_obj = upper_obj + lower_obj
         best_obj_idx = np.argmax(split_obj)

@@ -27,7 +27,7 @@ x_train, x_test, y_train, y_test, treat_train, treat_test = train_test_split(x, 
                                                                              test_size=0.5, random_state=42)
 
 # regular CTL
-ctl = CausalTree()
+ctl = CausalTree(magnitude=False)
 ctl.fit(x_train, y_train, treat_train)
 ctl.prune()
 ctl_predict = ctl.predict(x_test)
