@@ -39,7 +39,7 @@ class CausalTreeLearnNode(CausalTreeNode):
 class CausalTreeLearn(CausalTree):
 
     def __init__(self, weight=0.5, split_size=0.5, max_depth=-1, min_size=2, seed=724, feature_batch_size=None,
-                 magnitude=True):
+                 magnitude=True, honest=False):
         super().__init__()
         self.weight = weight
         self.val_split = split_size
@@ -53,6 +53,8 @@ class CausalTreeLearn(CausalTree):
         self.features = None
         self.feature_batch_size = feature_batch_size
         self.magnitude = magnitude
+
+        self.honest = honest
 
         self.root = CausalTreeLearnNode()
 
@@ -208,6 +210,13 @@ class CausalTreeLearn(CausalTree):
         best_lower_obj = lower_obj[best_obj_idx]
         best_split_obj = split_obj[best_obj_idx]
         val = unique_vals[best_obj_idx]
+
+        if self.honest:
+            upper_var_treated, upper_var_control = variance(yy[best_obj_idx][idx_x[best_obj_idx]],
+                                                            tt[best_obj_idx][idx_x[best_obj_idx]])
+            lower_var_treated, lower_var_control = variance(yy[best_obj_idx][idx_x[best_obj_idx]],
+                                                            tt[best_obj_idx][idx_x[best_obj_idx]])
+            return best_split_obj, best_upper_obj, best_lower_obj, upper_var_treated, upper_var_control, lower_var_treated, lower_var_control, val
 
         return best_split_obj, best_upper_obj, best_lower_obj, val
 
@@ -453,5 +462,12 @@ class CausalTreeLearn(CausalTree):
         best_lower_obj = lower_obj[best_obj_idx]
         best_split_obj = split_obj[best_obj_idx]
         val = unique_vals[best_obj_idx]
+
+        if self.honest:
+            upper_var_treated, upper_var_control = variance(yy[best_obj_idx][idx_x[best_obj_idx]],
+                                                            tt[best_obj_idx][idx_x[best_obj_idx]])
+            lower_var_treated, lower_var_control = variance(yy[best_obj_idx][idx_x[best_obj_idx]],
+                                                            tt[best_obj_idx][idx_x[best_obj_idx]])
+            return best_split_obj, best_upper_obj, best_lower_obj, upper_var_treated, upper_var_control, lower_var_treated, lower_var_control, val
 
         return best_split_obj, best_upper_obj, best_lower_obj, val

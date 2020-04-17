@@ -147,29 +147,52 @@ class CausalTreeLearnHonest(CausalTreeLearn):
                         best_tb_var, best_fb_var = (tb_var, fb_var)
                 else:
                     for x in batch(unique_vals, self.feature_batch_size):
-                        split_obj, upper_obj, lower_obj, value = self._eval_fast_honest(train_x, train_y, train_t,
-                                                                                        val_x, val_y, val_t,
-                                                                                        x, col,
-                                                                                        est_x, est_y, est_t)
 
-                        (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
-                            = divide_set(train_x, train_y, train_t, col, value)
+                        return_val = self._eval_fast_honest(train_x, train_y, train_t, val_x, val_y, val_t, x, col,
+                                                            est_x, est_y, est_t)
 
-                        # ----------------------------------------------------------------
-                        # Honest penalty
-                        # ----------------------------------------------------------------
-                        var_treat1, var_control1 = variance(train_y1, train_t1)
-                        var_treat2, var_control2 = variance(train_y2, train_t2)
+                        split_obj, upper_obj, lower_obj = return_val[0], return_val[1], return_val[2]
+                        upper_var_treated, upper_var_control = return_val[3], return_val[4]
+                        lower_var_treated, lower_var_control = return_val[5], return_val[6]
+                        value = return_val[7]
+
+                        tb_var = (1 + self.train_to_est_ratio) * ((upper_var_treated / self.treated_share) + (
+                                    upper_var_control / (1 - self.treated_share)))
+                        fb_var = (1 + self.train_to_est_ratio) * ((lower_var_treated / self.treated_share) + (
+                                    lower_var_control / (1 - self.treated_share)))
+
+                        # split_obj, upper_obj, lower_obj, value = self._eval_fast_honest(train_x, train_y, train_t,
+                        #                                                                 val_x, val_y, val_t,
+                        #                                                                 x, col,
+                        #                                                                 est_x, est_y, est_t)
+                        #
+                        # (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
+                        #     = divide_set(train_x, train_y, train_t, col, value)
+                        #
+                        # # ----------------------------------------------------------------
+                        # # Honest penalty
+                        # # ----------------------------------------------------------------
+                        # var_treat1, var_control1 = variance(train_y1, train_t1)
+                        # var_treat2, var_control2 = variance(train_y2, train_t2)
+                        # # tb_var = (1 + self.train_to_est_ratio) * (
+                        # #         (var_treat1 / (train_nt1 + 1)) + (var_control1 / (train_nc1 + 1)))
+                        # # fb_var = (1 + self.train_to_est_ratio) * (
+                        # #         (var_treat2 / (train_nt2 + 1)) + (var_control2 / (train_nc2 + 1)))
                         # tb_var = (1 + self.train_to_est_ratio) * (
-                        #         (var_treat1 / (train_nt1 + 1)) + (var_control1 / (train_nc1 + 1)))
+                        #         (var_treat1 / self.treated_share) + (var_control1 / (1 - self.treated_share)))
                         # fb_var = (1 + self.train_to_est_ratio) * (
-                        #         (var_treat2 / (train_nt2 + 1)) + (var_control2 / (train_nc2 + 1)))
-                        tb_var = (1 + self.train_to_est_ratio) * (
-                                (var_treat1 / self.treated_share) + (var_control1 / (1 - self.treated_share)))
-                        fb_var = (1 + self.train_to_est_ratio) * (
-                                (var_treat2 / self.treated_share) + (var_control2 / (1 - self.treated_share)))
+                        #         (var_treat2 / self.treated_share) + (var_control2 / (1 - self.treated_share)))
 
                         # combine honest and our objective
+                        # split_eval = (upper_obj + lower_obj) - (tb_var + fb_var)
+                        # gain = -(node.obj - node.var) + split_eval
+                        #
+                        # if gain > best_gain:
+                        #     best_gain = gain
+                        #     best_attributes = [col, value]
+                        #     best_tb_obj, best_fb_obj = (upper_obj, lower_obj)
+                        #     best_tb_var, best_fb_var = (tb_var, fb_var)
+
                         split_eval = (upper_obj + lower_obj) - (tb_var + fb_var)
                         gain = -(node.obj - node.var) + split_eval
 

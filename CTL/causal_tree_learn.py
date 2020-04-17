@@ -1,4 +1,5 @@
 from CTL.causal_tree.ctl.adaptive import *
+from CTL.causal_tree.ctl.honest import *
 from CTL.causal_tree.ctl.ctl_base import *
 from CTL.causal_tree.ctl.ctl_honest import *
 from CTL.causal_tree.ctl.ctl_val_honest import *
@@ -7,6 +8,7 @@ from CTL.causal_tree.ctl_trigger.adaptive_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_base_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_honest_trigger import *
 from CTL.causal_tree.ctl_trigger.ctl_val_honest_trigger import *
+from CTL.causal_tree.ctl_trigger.honest_trigger import *
 
 
 class CausalTree:
@@ -22,15 +24,18 @@ class CausalTree:
             "weight": weight,
             "seed": seed,
             "magnitude": magnitude,
+            "honest": True if honest or val_honest else False,
         }
         if cont:
             params["quartile"] = quartile
             params["old_trigger_code"] = old_trigger_code
-            if split_size <= 0.0 and weight <= 0.0:
+            if not honest and split_size <= 0.0 and weight <= 0.0:
                 # self.tree = AdaptiveTriggerTree(min_size=min_size, max_depth=max_depth,
                 #                                 split_size=split_size, weight=weight, seed=seed,
                 #                                 quartile=quartile, old_trigger_code=old_trigger_code)
                 self.tree = AdaptiveTriggerTree(**params)
+            elif honest and split_size <= 0.0 and weight <= 0.0:
+                self.tree = HonestTriggerTree(**params)
             elif val_honest and weight > 0.0:
                 # self.tree = TriggerTreeHonestValidation(min_size=min_size, max_depth=max_depth,
                 #                                         split_size=split_size, weight=weight, seed=seed,
@@ -53,10 +58,12 @@ class CausalTree:
                 self.tree = AdaptiveTriggerTree(**params)
         else:
             params["feature_batch_size"] = feature_batch_size
-            if split_size <= 0.0 and weight <= 0.0:
+            if not honest and split_size <= 0.0 and weight <= 0.0:
                 # self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
                 #                          split_size=split_size, weight=weight, seed=seed)
                 self.tree = AdaptiveTree(**params)
+            elif honest and split_size <= 0.0 and weight <= 0.0:
+                self.tree = HonestTree(**params)
             elif val_honest and weight > 0.0:
                 # self.tree = CausalTreeLearnHonestValidation(min_size=min_size, max_depth=max_depth,
                 #                                             split_size=split_size, weight=weight, seed=seed,

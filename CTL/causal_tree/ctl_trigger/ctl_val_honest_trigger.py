@@ -133,8 +133,8 @@ class TriggerTreeHonestValidation(TriggerTree):
                 # Honest penalty
                 # ----------------------------------------------------------------
                 # TODO: val est?
-                var_treat1, var_control1 = variance(train_y1, train_t1)
-                var_treat2, var_control2 = variance(train_y2, train_t2)
+                var_treat1, var_control1 = variance_trigger(train_y1, train_t1, trigger=tb_trigger)
+                var_treat2, var_control2 = variance_trigger(train_y2, train_t2, trigger=fb_trigger)
                 tb_nt, tb_nc = get_treat_size(val_t1, tb_trigger)
                 fb_nt, fb_nc = get_treat_size(val_t2, fb_trigger)
                 tb_treated_share = tb_nt / train_x.shape[0] if tb_nt > 0 else 1.0

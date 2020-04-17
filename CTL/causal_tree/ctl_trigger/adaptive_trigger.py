@@ -22,10 +22,13 @@ class AdaptiveTriggerTree(TriggerTree):
     def adaptive_eval(self, train_y, train_t):
 
         total_train = train_y.shape[0]
+        return_val = (-np.inf, -np.inf, -np.inf)
+
+        if total_train == 0:
+            return return_val
 
         train_effect, best_trigger = tau_squared_trigger(train_y, train_t, self.min_size, self.quartile)
 
-        return_val = (-np.inf, -np.inf, -np.inf)
         if train_effect <= -np.inf:
             return return_val
 
@@ -121,7 +124,6 @@ class AdaptiveTriggerTree(TriggerTree):
 
                 tb_eval, tb_trigger, tb_mse = self.adaptive_eval(train_y1, train_t1)
                 fb_eval, fb_trigger, fb_mse = self.adaptive_eval(train_y2, train_t2)
-                best_tb_trigger, best_fb_trigger = (tb_trigger, fb_trigger)
 
                 split_eval = (tb_eval + fb_eval)
                 gain = -node.obj + split_eval
@@ -130,6 +132,7 @@ class AdaptiveTriggerTree(TriggerTree):
                     best_gain = gain
                     best_attributes = [col, value]
                     best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
+                    best_tb_trigger, best_fb_trigger = (tb_trigger, fb_trigger)
 
         if best_gain > 0:
             node.col = best_attributes[0]

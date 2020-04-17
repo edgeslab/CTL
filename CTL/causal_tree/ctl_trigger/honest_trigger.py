@@ -2,27 +2,50 @@ from CTL.causal_tree.ctl_trigger.trigger_ctl import *
 from sklearn.model_selection import train_test_split
 
 
-class TriggerHonestNode(TriggerNode):
+class HonestTriggerNode(TriggerNode):
 
     def __init__(self, var=0.0, **kwargs):
         super().__init__(**kwargs)
-
         self.var = var
+        # self.obj = obj
 
 
 # ----------------------------------------------------------------
 # Base causal tree (ctl, base objective)
 # ----------------------------------------------------------------
-class TriggerTreeHonest(TriggerTree):
+class HonestTriggerTree(TriggerTree):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.root = TriggerHonestNode()
-
+        self.root = HonestTriggerNode()
         self.train_to_est_ratio = 1.0
-        # self.num_treated = 1.0
-        # self.num_samples = 1.0
-        # self.treated_share = 1.0
+        self.num_treated = 1.0
+        self.num_samples = 1.0
+        self.treated_share = 1.0
+
+    def honest_eval(self, train_y, train_t):
+
+        total_train = train_y.shape[0]
+
+        return_val = (-np.inf, -np.inf, -np.inf)
+        if total_train == 0:
+            return return_val
+
+        # print(self.tree_depth)
+        train_effect, best_trigger = tau_squared_trigger(train_y, train_t, self.min_size, self.quartile)
+
+        if train_effect <= -np.inf:
+            return return_val
+
+        train_err = train_effect ** 2
+
+        train_mse = total_train * train_err
+        obj = train_mse
+
+        best_obj = obj
+        best_mse = train_err
+
+        return best_obj, best_trigger, best_mse
 
     def fit(self, x, y, t):
         if x.shape[0] == 0:
@@ -40,23 +63,23 @@ class TriggerTreeHonest(TriggerTree):
         # ----------------------------------------------------------------
         # Split data
         # ----------------------------------------------------------------
-        train_x, val_x, train_y, val_y, train_t, val_t = train_test_split(x, y, t, random_state=self.seed, shuffle=True,
-                                                                          test_size=self.val_split)
-        # get honest/estimation portion
-        train_x, est_x, train_y, est_y, train_t, est_t = train_test_split(train_x, train_y, train_t, shuffle=True,
+        train_x, est_x, train_y, est_y, train_t, est_t = train_test_split(x, y, t, shuffle=True,
                                                                           random_state=self.seed, test_size=0.5)
 
-        self.root.num_samples = y.shape[0]
+        self.root.num_samples = est_y.shape[0]
         # ----------------------------------------------------------------
         # effect and pvals
         # ----------------------------------------------------------------
-        effect, trigger = tau_squared_trigger(y, t, self.min_size, self.quartile)
-        p_val = get_pval_trigger(y, t, trigger)
+        effect, trigger = tau_squared_trigger(train_y, train_t, self.min_size, self.quartile)
+        effect = ace_trigger(est_y, est_t, trigger=trigger)
+        p_val = get_pval_trigger(est_y, est_t, trigger)
         self.root.effect = effect
         self.root.p_val = p_val
         self.root.trigger = trigger
 
-        # TODO: est ratio is overall?
+        # ----------------------------------------------------------------
+        # Not sure if i should eval in root or not
+        # ----------------------------------------------------------------
         self.train_to_est_ratio = est_x.shape[0] / train_x.shape[0]
         current_var_treat, current_var_control = variance_trigger(train_y, train_t, trigger)
         num_treat, num_cont = get_treat_size(train_t, trigger)
@@ -64,27 +87,23 @@ class TriggerTreeHonest(TriggerTree):
         control_share = 1 - treated_share if treated_share < 1 else 0.0
         current_var = (1 * self.train_to_est_ratio) * (
                 (current_var_treat / treated_share) + (current_var_control / (1 - control_share)))
+        node_eval, trigger, mse = self.honest_eval(train_y, train_t)
 
         self.root.var = current_var
-        # ----------------------------------------------------------------
-        # Not sure if i should eval in root or not
-        # ----------------------------------------------------------------
-        node_eval, trigger, mse = self._eval(train_y, train_t, val_y, val_t)
         self.root.obj = node_eval - current_var
-
         # ----------------------------------------------------------------
         # Add control/treatment means
         # ----------------------------------------------------------------
         self.root.control_mean = np.mean(y[t >= trigger])
         self.root.treatment_mean = np.mean(y[t < trigger])
 
-        self.root.num_samples = x.shape[0]
+        self.root.num_samples = est_x.shape[0]
 
-        self._fit(self.root, train_x, train_y, train_t, val_x, val_y, val_t, est_x, est_y, est_t)
+        self._fit(self.root, train_x, train_y, train_t, est_x, est_y, est_t)
 
-    def _fit(self, node: TriggerHonestNode, train_x, train_y, train_t, val_x, val_y, val_t, est_x, est_y, est_t):
+    def _fit(self, node: HonestTriggerNode, train_x, train_y, train_t, est_x, est_y, est_t):
 
-        if train_x.shape[0] == 0 or val_x.shape[0] == 0:
+        if train_x.shape[0] == 0 or est_x.shape[0] == 0:
             return node
 
         if node.node_depth > self.tree_depth:
@@ -112,17 +131,14 @@ class TriggerTreeHonest(TriggerTree):
 
             for value in unique_vals:
 
-                (val_x1, val_x2, val_y1, val_y2, val_t1, val_t2) \
-                    = divide_set(val_x, val_y, val_t, col, value)
-
                 (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
                     = divide_set(train_x, train_y, train_t, col, value)
 
                 # ----------------------------------------------------------------
                 # Regular objective
                 # ----------------------------------------------------------------
-                tb_eval, tb_trigger, tb_mse = self._eval(train_y1, train_t1, val_y1, val_t1)
-                fb_eval, fb_trigger, fb_mse = self._eval(train_y2, train_t2, val_y2, val_t2)
+                tb_eval, tb_trigger, tb_mse = self.honest_eval(train_y1, train_t1)
+                fb_eval, fb_trigger, fb_mse = self.honest_eval(train_y2, train_t2)
 
                 (est_x1, est_x2, est_y1, est_y2, est_t1, est_t2) \
                     = divide_set(est_x, est_y, est_t, col, value)
@@ -147,16 +163,13 @@ class TriggerTreeHonest(TriggerTree):
                 fb_var = (1 + self.train_to_est_ratio) * (
                         (var_treat2 / fb_treated_share) + (var_control2 / fb_control_share))
 
-                # combine honest and our objective
                 split_eval = (tb_eval + fb_eval) - (tb_var + fb_var)
-                # print(node.obj - node.var, split_eval)
                 gain = -(node.obj - node.var) + split_eval
 
                 if gain > best_gain:
                     best_gain = gain
                     best_attributes = [col, value]
                     best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
-                    best_tb_var, best_fb_var = (tb_var, fb_var)
                     best_tb_trigger, best_fb_trigger = (tb_trigger, fb_trigger)
 
         if best_gain > 0:
@@ -166,9 +179,6 @@ class TriggerTreeHonest(TriggerTree):
             (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
                 = divide_set(train_x, train_y, train_t, node.col, node.value)
 
-            (val_x1, val_x2, val_y1, val_y2, val_t1, val_t2) \
-                = divide_set(val_x, val_y, val_t, node.col, node.value)
-
             (est_x1, est_x2, est_y1, est_y2, est_t1, est_t2) \
                 = divide_set(est_x, est_y, est_t, node.col, node.value)
 
@@ -177,23 +187,21 @@ class TriggerTreeHonest(TriggerTree):
             tb_p_val = get_pval_trigger(est_y1, est_t1, best_tb_trigger)
             fb_p_val = get_pval_trigger(est_y2, est_t2, best_fb_trigger)
 
-            self.obj = self.obj - (node.obj - node.var) + (best_tb_obj + best_fb_obj -
-                                                           best_tb_var - best_fb_var)
+            self.obj = self.obj - node.obj + best_tb_obj + best_fb_obj
+
             # ----------------------------------------------------------------
             # Ignore "mse" here, come back to it later?
             # ----------------------------------------------------------------
 
-            tb = TriggerHonestNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
-                                   node_depth=node.node_depth + 1, var=best_tb_var,
+            tb = HonestTriggerNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
+                                   node_depth=node.node_depth + 1,
                                    num_samples=est_y1.shape[0], trigger=best_tb_trigger)
-            fb = TriggerHonestNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
-                                   node_depth=node.node_depth + 1, var=best_fb_var,
+            fb = HonestTriggerNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
+                                   node_depth=node.node_depth + 1,
                                    num_samples=est_y2.shape[0], trigger=best_fb_trigger)
 
-            node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1,
-                                         est_x1, est_y1, est_t1)
-            node.false_branch = self._fit(fb, train_x2, train_y2, train_t2, val_x2, val_y2, val_t2,
-                                          est_x2, est_y2, est_t2)
+            node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, est_x1, est_y1, est_t1)
+            node.false_branch = self._fit(fb, train_x2, train_y2, train_t2, est_x2, est_y2, est_t2)
 
             if node.effect > self.max_effect:
                 self.max_effect = node.effect
