@@ -149,7 +149,7 @@ class CausalTreeLearnHonest(CausalTreeLearn):
                     for x in batch(unique_vals, self.feature_batch_size):
                         split_obj, upper_obj, lower_obj, value = self._eval_fast_honest(train_x, train_y, train_t,
                                                                                         val_x, val_y, val_t,
-                                                                                        unique_vals, col,
+                                                                                        x, col,
                                                                                         est_x, est_y, est_t)
 
                         (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
