@@ -367,7 +367,7 @@ class CausalTreeLearn(CausalTree):
         val_tt = np.tile(val_t, (unique_vals.shape[0], 1))
 
         est_xx = np.tile(est_col_x, (unique_vals.shape[0], 1))
-        est_yy = np.tile(est_y, (unique_vals.shape[0], 1))
+        # est_yy = np.tile(est_y, (unique_vals.shape[0], 1))
         est_tt = np.tile(est_t, (unique_vals.shape[0], 1))
 
         idx_x = np.transpose(np.transpose(xx) >= unique_vals)

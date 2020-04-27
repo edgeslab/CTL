@@ -47,18 +47,27 @@ class CausalTreeLearnHonestValidation(CausalTreeLearn):
         train_x, val_x, train_y, val_y, train_t, val_t = train_test_split(x, y, t, random_state=self.seed, shuffle=True,
                                                                           test_size=self.val_split)
 
-        num_treat, _ = get_treat_size(t)
-        self.num_treated = num_treat
-        self.num_samples = x.shape[0]
-        self.treated_share = self.num_treated / self.num_samples
         # TODO: val est?
-        self.root.num_samples = x.shape[0]
+        # num_treat, _ = get_treat_size(t)
+        # self.num_treated = num_treat
+        # self.num_samples = x.shape[0]
+        # self.treated_share = self.num_treated / self.num_samples
+        # self.root.num_samples = x.shape[0]
+        num_treat, _ = get_treat_size(val_t)
+        self.num_treated = num_treat
+        self.num_samples = val_t.shape[0]
+        self.treated_share = self.num_treated / self.num_samples
+        self.root.num_samples = val_t.shape[0]
         # ----------------------------------------------------------------
         # effect and pvals
         # ----------------------------------------------------------------
         # TODO: val est?
-        effect = tau_squared(y, t)
-        p_val = get_pval(y, t)
+        # effect = tau_squared(y, t)
+        # p_val = get_pval(y, t)
+        # self.root.effect = effect
+        # self.root.p_val = p_val
+        effect = tau_squared(val_y, val_t)
+        p_val = get_pval(val_y, val_t)
         self.root.effect = effect
         self.root.p_val = p_val
 
@@ -255,15 +264,20 @@ class CausalTreeLearnHonestValidation(CausalTreeLearn):
             # ----------------------------------------------------------------
             # TODO: same note as at the top (not sure if sep val est)
             # ----------------------------------------------------------------
-            y1 = np.concatenate((train_y1, val_y1))
-            y2 = np.concatenate((train_y2, val_y2))
-            t1 = np.concatenate((train_t1, val_t1))
-            t2 = np.concatenate((train_t2, val_t2))
+            # y1 = np.concatenate((train_y1, val_y1))
+            # y2 = np.concatenate((train_y2, val_y2))
+            # t1 = np.concatenate((train_t1, val_t1))
+            # t2 = np.concatenate((train_t2, val_t2))
+            #
+            # best_tb_effect = ace(y1, t1)
+            # best_fb_effect = ace(y2, t2)
+            # tb_p_val = get_pval(y1, t1)
+            # fb_p_val = get_pval(y2, t2)
 
-            best_tb_effect = ace(y1, t1)
-            best_fb_effect = ace(y2, t2)
-            tb_p_val = get_pval(y1, t1)
-            fb_p_val = get_pval(y2, t2)
+            best_tb_effect = ace(val_y1, val_t1)
+            best_fb_effect = ace(val_y2, val_t2)
+            tb_p_val = get_pval(val_y1, val_t1)
+            fb_p_val = get_pval(val_y2, val_t2)
 
             self.obj = self.obj - (node.obj - node.var) + (best_tb_obj + best_fb_obj -
                                                            best_tb_var - best_fb_var)

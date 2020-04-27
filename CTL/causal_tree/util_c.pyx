@@ -10,6 +10,8 @@ cimport cython
 from cpython cimport bool
 cimport numpy as np
 
+# TODO: Category types
+
 # ----------------------------------------------------------------
 # General helper functions
 # ----------------------------------------------------------------
@@ -144,6 +146,8 @@ cpdef variance(np.ndarray[np.float_t, ndim=1] y, np.ndarray[np.float_t, ndim=1] 
 
     return var_t, var_c
 
+@cython.boundscheck(False) # turn off bounds-checking for entire function
+@cython.wraparound(False)  # turn off negative index wrapping for entire function
 cpdef ace(np.ndarray[np.float_t, ndim=1] y, np.ndarray[np.float_t, ndim=1] t):
     cdef int tmax = len(t)
 
