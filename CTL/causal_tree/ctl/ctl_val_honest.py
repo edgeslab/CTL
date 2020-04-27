@@ -287,10 +287,10 @@ class CausalTreeLearnHonestValidation(CausalTreeLearn):
 
             tb = HonestValidationCausalTreeLearnNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
                                                      node_depth=node.node_depth + 1,
-                                                     var=best_tb_var, num_samples=y1.shape[0])
+                                                     var=best_tb_var, num_samples=val_y1.shape[0])
             fb = HonestValidationCausalTreeLearnNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
                                                      node_depth=node.node_depth + 1,
-                                                     var=best_tb_var, num_samples=y2.shape[0])
+                                                     var=best_tb_var, num_samples=val_y2.shape[0])
 
             node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1)
             node.false_branch = self._fit(fb, train_x2, train_y2, train_t2, val_x2, val_y2, val_t2)
