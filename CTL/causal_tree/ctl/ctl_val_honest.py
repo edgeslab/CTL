@@ -93,7 +93,7 @@ class CausalTreeLearnHonestValidation(CausalTreeLearn):
         self.root.control_mean = np.mean(val_y[val_t == 0])
         self.root.treatment_mean = np.mean(val_y[val_t == 1])
 
-        self.root.num_samples = x.shape[0]
+        self.root.num_samples = val_x.shape[0]
 
         self._fit(self.root, train_x, train_y, train_t, val_x, val_y, val_t)
 

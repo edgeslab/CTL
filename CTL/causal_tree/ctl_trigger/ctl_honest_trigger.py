@@ -50,11 +50,16 @@ class TriggerTreeHonest(TriggerTree):
         # ----------------------------------------------------------------
         # effect and pvals
         # ----------------------------------------------------------------
-        effect, trigger = tau_squared_trigger(y, t, self.min_size, self.quartile)
-        p_val = get_pval_trigger(y, t, trigger)
+        _, trigger = tau_squared_trigger(y, t, self.min_size, self.quartile)
+        effect = ace_trigger(est_y, est_t, trigger)
+        p_val = get_pval_trigger(est_y, est_t, trigger)
         self.root.effect = effect
         self.root.p_val = p_val
         self.root.trigger = trigger
+        # p_val = get_pval_trigger(y, t, trigger)
+        # self.root.effect = effect
+        # self.root.p_val = p_val
+        # self.root.trigger = trigger
 
         # TODO: est ratio is overall?
         self.train_to_est_ratio = est_x.shape[0] / train_x.shape[0]
