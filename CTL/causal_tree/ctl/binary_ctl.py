@@ -39,13 +39,16 @@ class CausalTreeLearnNode(CausalTreeNode):
 class CausalTreeLearn(CausalTree):
 
     def __init__(self, weight=0.5, split_size=0.5, max_depth=-1, min_size=2, seed=724, feature_batch_size=None,
-                 magnitude=True, honest=False):
+                 magnitude=True, honest=False, max_values=None, verbose=False):
         super().__init__()
         self.weight = weight
         self.val_split = split_size
         self.max_depth = max_depth
         self.min_size = min_size
         self.seed = seed
+
+        self.max_values = max_values
+        self.verbose = verbose
 
         self.max_effect = 0.0
         self.min_effect = 0.0

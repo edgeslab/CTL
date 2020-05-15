@@ -14,7 +14,8 @@ from CTL.causal_tree.ctl_trigger.honest_trigger import *
 class CausalTree:
 
     def __init__(self, cont=False, val_honest=False, honest=False, min_size=2, max_depth=-1, split_size=0.5, weight=0.5,
-                 seed=724, quartile=False, old_trigger_code=False, feature_batch_size=None, magnitude=True):
+                 seed=724, quartile=False, old_trigger_code=False, feature_batch_size=None, magnitude=True,
+                 max_values=None, verbose=False):
         self.cont = cont
 
         params = {
@@ -25,6 +26,8 @@ class CausalTree:
             "seed": seed,
             "magnitude": magnitude,
             "honest": True if honest or val_honest else False,
+            "max_values": max_values,
+            "verbose": verbose,
         }
         if cont:
             params["quartile"] = quartile

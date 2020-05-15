@@ -112,9 +112,15 @@ class HonestTree(CausalTreeLearn):
         for col in range(0, column_count):
             unique_vals = np.unique(train_x[:, col])
 
-            # ----------------------------------------------------------------
-            # TODO: Max values stuff
-            # ----------------------------------------------------------------
+            if self.max_values is not None:
+                if self.max_values < 1:
+                    idx = np.round(np.linspace(
+                        0, len(unique_vals) - 1, self.max_values * len(unique_vals))).astype(int)
+                    unique_vals = unique_vals[idx]
+                else:
+                    idx = np.round(np.linspace(
+                        0, len(unique_vals) - 1, self.max_values)).astype(int)
+                    unique_vals = unique_vals[idx]
 
             for value in unique_vals:
 
