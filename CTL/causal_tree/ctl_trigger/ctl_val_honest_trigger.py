@@ -86,9 +86,9 @@ class TriggerTreeHonestValidation(TriggerTree):
 
     def _fit(self, node: TriggerValidationNode, train_x, train_y, train_t, val_x, val_y, val_t):
 
-        x = np.concatenate((train_x, val_x))
-        y = np.concatenate((train_y, val_y))
-        t = np.concatenate((train_t, val_t))
+        # x = np.concatenate((train_x, val_x))
+        # y = np.concatenate((train_y, val_y))
+        # t = np.concatenate((train_t, val_t))
 
         if train_x.shape[0] == 0 or val_x.shape[0] == 0:
             return node
@@ -114,8 +114,7 @@ class TriggerTreeHonestValidation(TriggerTree):
 
             if self.max_values is not None:
                 if self.max_values < 1:
-                    idx = np.round(np.linspace(
-                        0, len(unique_vals) - 1, self.max_values * len(unique_vals))).astype(int)
+                    idx = np.round(np.linspace(0, len(unique_vals) - 1, self.max_values * len(unique_vals))).astype(int)
                     unique_vals = unique_vals[idx]
                 else:
                     idx = np.round(np.linspace(

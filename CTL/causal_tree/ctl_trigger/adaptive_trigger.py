@@ -110,8 +110,7 @@ class AdaptiveTriggerTree(TriggerTree):
 
             if self.max_values is not None:
                 if self.max_values < 1:
-                    idx = np.round(np.linspace(
-                        0, len(unique_vals) - 1, self.max_values * len(unique_vals))).astype(int)
+                    idx = np.round(np.linspace(0, len(unique_vals) - 1, self.max_values * len(unique_vals))).astype(int)
                     unique_vals = unique_vals[idx]
                 else:
                     idx = np.round(np.linspace(

@@ -6,6 +6,7 @@ build/
 causal_tree_learn.egg-info
 dist
 /backup/
+notebooks/
 
 test.py
 test_script.py
@@ -15,4 +16,4 @@ test_cython.py
 binary_example_random.py
 test_trigger.py
 data_generation.py
-2020-04-28 - Vectorize with Matching.ipynb
+notebooks/2020-04-28 - Vectorize with Matching.ipynb
