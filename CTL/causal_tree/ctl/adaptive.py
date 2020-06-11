@@ -2,7 +2,7 @@ from CTL.causal_tree.ctl.binary_ctl import *
 from sklearn.model_selection import train_test_split
 
 
-class AdaptiveNode(CausalTreeLearnNode):
+class AdaptiveNode(CTLearnNode):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -13,7 +13,7 @@ class AdaptiveNode(CausalTreeLearnNode):
 # ----------------------------------------------------------------
 # Base causal tree (ctl, base objective)
 # ----------------------------------------------------------------
-class AdaptiveTree(CausalTreeLearn):
+class AdaptiveTree(CTLearn):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

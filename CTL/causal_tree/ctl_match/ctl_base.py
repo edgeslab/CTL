@@ -2,7 +2,7 @@ from CTL.causal_tree.ctl_match.binary_ctl import *
 from sklearn.model_selection import train_test_split
 
 
-class BaseCausalTreeLearnNode(CausalTreeLearnNode):
+class BaseCausalTreeLearnNode(CTLearnNode):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

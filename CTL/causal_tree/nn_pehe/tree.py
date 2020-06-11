@@ -2,11 +2,36 @@ try:
     from CTL.causal_tree.util_c import *
 except:
     from CTL.causal_tree.util import *
-from CTL.causal_tree.causal_tree import *
+from CTL.causal_tree.ct import *
 import numpy as np
+from scipy.spatial import cKDTree
 
 
-class CausalTreeLearnNode(CausalTreeNode):
+# TODO: Add weighting on evaluations
+
+def compute_nn_effect(x, y, t, k=1):
+    kdtree = cKDTree(x)
+    d, idx = kdtree.query(x, k=x.shape[0])
+    idx = idx[:, 1:]
+    treated = np.where(t == 1)[0]
+    control = np.where(t == 0)[0]
+    bool_treated = np.isin(idx, treated)
+    bool_control = np.isin(idx, control)
+
+    nn_effect = np.zeros(x.shape)
+    for i in range(len(bool_treated)):
+        i_treat_idx = np.where(bool_treated[i, :])[0][:k]
+        i_control_idx = np.where(bool_control[i, :])[0][:k]
+
+        i_treat_nn = y[i_treat_idx]
+        i_cont_nn = y[i_control_idx]
+
+        nn_effect[i] = np.mean(i_treat_nn) - np.mean(i_cont_nn)
+
+    return nn_effect
+
+
+class PEHENode(CTNode):
 
     def __init__(self, p_val=1.0, effect=0.0, node_depth=0, control_mean=0.0, treatment_mean=0.0, col=-1, value=-1,
                  is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0):
@@ -35,10 +60,10 @@ class CausalTreeLearnNode(CausalTreeNode):
         self.decision = ""
 
 
-class CausalTreeLearn(CausalTree):
+class PEHETree(CausalTree):
 
     def __init__(self, weight=0.5, split_size=0.5, max_depth=-1, min_size=2, seed=724, feature_batch_size=None,
-                 magnitude=True, honest=False, max_values=None, verbose=False):
+                 magnitude=True, honest=False, max_values=None, verbose=False, k=1):
         super().__init__()
         self.weight = weight
         self.val_split = split_size
@@ -58,173 +83,29 @@ class CausalTreeLearn(CausalTree):
 
         self.honest = honest
 
-        self.root = CausalTreeLearnNode()
+        self.k = k
+        self.num_training = 1
+
+        self.root = PEHENode()
 
     @abstractmethod
     def fit(self, x, y, t):
         pass
 
-    def _eval(self, train_y, train_t, val_y, val_t):
-        total_train = train_y.shape[0]
-        total_val = val_y.shape[0]
+    def _eval(self, train_y, train_t, nn_effect):
 
-        # return_val = (-np.inf, -np.inf)
-        #
-        # if total_train == 0 or total_val == 0:
-        #     return return_val
+        treated = np.where(train_t == 1)[0]
+        control = np.where(train_t == 0)[0]
 
-        train_effect = ace(train_y, train_t)
-        val_effect = ace(val_y, val_t)
+        pred_effect = np.mean(train_y[treated]) - np.mean(train_y[control])
+        # nn_pehe = np.mean((nn_effect - pred_effect) ** 2)
+        nn_pehe = np.sum((nn_effect - pred_effect) ** 2)
 
-        # train_mse = (1 - self.weight) * total_train * (train_effect ** 2)
-        # cost = self.weight * total_val * np.abs(train_effect - val_effect)
-        #
-        # obj = (train_mse - cost) / (np.abs(total_train - total_val) + 1)
-        # mse = total_train * (train_effect ** 2)
-
-        train_mse = (1 - self.weight) * (train_effect ** 2)
-        cost = self.weight * np.abs(train_effect - val_effect)
-
-        obj = train_mse - cost
-        if self.magnitude:
-            obj = total_train * obj
-        mse = total_train * (train_effect ** 2)
-
-        return obj, mse
-
-    def _eval_fast(self, train_x, train_y, train_t, val_x, val_y, val_t, unique_vals, col):
-
-        min_size = self.min_size
-        val_size = self.val_split * self.min_size if self.val_split * self.min_size > 2 else 2
-
-        train_col_x = train_x[:, col]
-        val_col_x = val_x[:, col]
-
-        xx = np.tile(train_col_x, (unique_vals.shape[0], 1))
-        yy = np.tile(train_y, (unique_vals.shape[0], 1))
-        tt = np.tile(train_t, (unique_vals.shape[0], 1))
-
-        val_xx = np.tile(val_col_x, (unique_vals.shape[0], 1))
-        val_yy = np.tile(val_y, (unique_vals.shape[0], 1))
-        val_tt = np.tile(val_t, (unique_vals.shape[0], 1))
-
-        idx_x = np.transpose(np.transpose(xx) >= unique_vals)
-        val_idx_x = np.transpose(np.transpose(val_xx) >= unique_vals)
-
-        train_denom_treated_upper = idx_x * (tt == 1)
-        train_denom_control_upper = idx_x * (tt == 0)
-        train_treat_nums_upper = np.sum(train_denom_treated_upper, axis=1)
-        train_control_nums_upper = np.sum(train_denom_control_upper, axis=1)
-        train_denom_treated_lower = ~idx_x * (tt == 1)
-        train_denom_control_lower = ~idx_x * (tt == 0)
-        train_treat_nums_lower = np.sum(train_denom_treated_lower, axis=1)
-        train_control_nums_lower = np.sum(train_denom_control_lower, axis=1)
-
-        val_denom_treated_upper = val_idx_x * (val_tt == 1)
-        val_denom_control_upper = val_idx_x * (val_tt == 0)
-        val_treat_nums_upper = np.sum(val_denom_treated_upper, axis=1)
-        val_control_nums_upper = np.sum(val_denom_control_upper, axis=1)
-        val_denom_treated_lower = ~val_idx_x * (val_tt == 1)
-        val_denom_control_lower = ~val_idx_x * (val_tt == 0)
-        val_treat_nums_lower = np.sum(val_denom_treated_lower, axis=1)
-        val_control_nums_lower = np.sum(val_denom_control_lower, axis=1)
-
-        split_upper_check = np.logical_and(train_treat_nums_upper >= min_size, train_control_nums_upper >= min_size)
-        split_lower_check = np.logical_and(train_treat_nums_lower >= min_size, train_control_nums_lower >= min_size)
-        val_split_upper_check = np.logical_and(val_treat_nums_upper >= val_size, val_control_nums_upper >= val_size)
-        val_split_lower_check = np.logical_and(val_treat_nums_lower >= val_size, val_control_nums_lower >= val_size)
-        train_split_check = np.logical_and(split_upper_check, split_lower_check)
-        val_split_check = np.logical_and(val_split_upper_check, val_split_lower_check)
-        min_size_idx = np.where(np.logical_and(train_split_check, val_split_check))
-
-        if len(min_size_idx[0]) < 1:
-            return -np.inf, -np.inf, -np.inf, -np.inf
-
-        unique_vals = unique_vals[min_size_idx]
-
-        # idx_x = idx_x[min_size_idx]
-        yy = yy[min_size_idx]
-        # tt = tt[min_size_idx]
-        train_denom_treated_upper = train_denom_treated_upper[min_size_idx]
-        train_denom_control_upper = train_denom_control_upper[min_size_idx]
-        train_denom_treated_lower = train_denom_treated_lower[min_size_idx]
-        train_denom_control_lower = train_denom_control_lower[min_size_idx]
-
-        train_treat_nums_upper = train_treat_nums_upper[min_size_idx]
-        train_control_nums_upper = train_control_nums_upper[min_size_idx]
-        train_treat_nums_lower = train_treat_nums_lower[min_size_idx]
-        train_control_nums_lower = train_control_nums_lower[min_size_idx]
-
-        # val_idx_x = val_idx_x[min_size_idx]
-        val_yy = val_yy[min_size_idx]
-        # val_tt = val_tt[min_size_idx]
-        val_denom_treated_upper = val_denom_treated_upper[min_size_idx]
-        val_denom_control_upper = val_denom_control_upper[min_size_idx]
-        val_denom_treated_lower = val_denom_treated_lower[min_size_idx]
-        val_denom_control_lower = val_denom_control_lower[min_size_idx]
-
-        val_treat_nums_upper = val_treat_nums_upper[min_size_idx]
-        val_control_nums_upper = val_control_nums_upper[min_size_idx]
-        val_treat_nums_lower = val_treat_nums_lower[min_size_idx]
-        val_control_nums_lower = val_control_nums_lower[min_size_idx]
-
-        # train_um1 = np.sum(yy * train_denom_treated_upper, axis=1) / np.sum(train_denom_treated_upper, axis=1)
-        # train_um0 = np.sum(yy * train_denom_control_upper, axis=1) / np.sum(train_denom_control_upper, axis=1)
-        # train_upper_effect = train_um1 - train_um0
-        # train_lm1 = np.sum(yy * train_denom_treated_lower, axis=1) / np.sum(train_denom_treated_lower, axis=1)
-        # train_lm0 = np.sum(yy * train_denom_control_lower, axis=1) / np.sum(train_denom_control_lower, axis=1)
-        # train_lower_effect = train_lm1 - train_lm0
-        train_um1 = np.sum(yy * train_denom_treated_upper, axis=1) / train_treat_nums_upper
-        train_um0 = np.sum(yy * train_denom_control_upper, axis=1) / train_control_nums_upper
-        train_upper_effect = train_um1 - train_um0
-        train_lm1 = np.sum(yy * train_denom_treated_lower, axis=1) / train_treat_nums_lower
-        train_lm0 = np.sum(yy * train_denom_control_lower, axis=1) / train_control_nums_lower
-        train_lower_effect = train_lm1 - train_lm0
-
-        # val_um1 = np.sum(val_yy * val_denom_treated_upper, axis=1) / np.sum(val_denom_treated_upper, axis=1)
-        # val_um0 = np.sum(val_yy * val_denom_control_upper, axis=1) / np.sum(val_denom_control_upper, axis=1)
-        # val_upper_effect = val_um1 - val_um0
-        # val_lm1 = np.sum(val_yy * val_denom_treated_lower, axis=1) / np.sum(val_denom_treated_lower, axis=1)
-        # val_lm0 = np.sum(val_yy * val_denom_control_lower, axis=1) / np.sum(val_denom_control_lower, axis=1)
-        # val_lower_effect = val_lm1 - val_lm0
-        val_um1 = np.sum(val_yy * val_denom_treated_upper, axis=1) / val_treat_nums_upper
-        val_um0 = np.sum(val_yy * val_denom_control_upper, axis=1) / val_control_nums_upper
-        val_upper_effect = val_um1 - val_um0
-        val_lm1 = np.sum(val_yy * val_denom_treated_lower, axis=1) / val_treat_nums_lower
-        val_lm0 = np.sum(val_yy * val_denom_control_lower, axis=1) / val_control_nums_lower
-        val_lower_effect = val_lm1 - val_lm0
-
-        train_upper_mse = (1 - self.weight) * train_upper_effect ** 2
-        upper_cost = self.weight * np.abs(train_upper_effect - val_upper_effect)
-        upper_obj = train_upper_mse - upper_cost
-        if self.magnitude:
-            upper_obj = (train_treat_nums_upper + train_control_nums_upper) * upper_obj
-
-        train_lower_mse = (1 - self.weight) * train_lower_effect ** 2
-        lower_cost = self.weight * np.abs(train_lower_effect - val_lower_effect)
-        lower_obj = train_lower_mse - lower_cost
-        if self.magnitude:
-            lower_obj = (train_treat_nums_lower + train_control_nums_lower) * lower_obj
-
-        split_obj = upper_obj + lower_obj
-        best_obj_idx = np.argmax(split_obj)
-        best_upper_obj = upper_obj[best_obj_idx]
-        best_lower_obj = lower_obj[best_obj_idx]
-        best_split_obj = split_obj[best_obj_idx]
-        val = unique_vals[best_obj_idx]
-
-        if self.honest:
-            upper_var_treated, upper_var_control = variance(yy[best_obj_idx][idx_x[best_obj_idx]],
-                                                            tt[best_obj_idx][idx_x[best_obj_idx]])
-            lower_var_treated, lower_var_control = variance(yy[best_obj_idx][idx_x[best_obj_idx]],
-                                                            tt[best_obj_idx][idx_x[best_obj_idx]])
-            return best_split_obj, best_upper_obj, best_lower_obj, upper_var_treated, upper_var_control, lower_var_treated, lower_var_control, val
-
-        return best_split_obj, best_upper_obj, best_lower_obj, val
+        return nn_pehe
 
     def predict(self, x):
 
-        def _predict(node: CausalTreeLearnNode, observation):
+        def _predict(node: PEHENode, observation):
             if node.is_leaf:
                 return node.effect
             else:
@@ -252,7 +133,7 @@ class CausalTreeLearn(CausalTree):
 
     def get_groups(self, x):
 
-        def _get_group(node: CausalTreeLearnNode, observation):
+        def _get_group(node: PEHENode, observation):
             if node.is_leaf:
                 return node.leaf_num
             else:
@@ -277,7 +158,7 @@ class CausalTreeLearn(CausalTree):
 
     def get_features(self, x):
 
-        def _get_features(node: CausalTreeLearnNode, observation, features):
+        def _get_features(node: PEHENode, observation, features):
             if node.is_leaf:
                 return features
             else:
@@ -305,7 +186,7 @@ class CausalTreeLearn(CausalTree):
 
     def prune(self, alpha=0.05):
 
-        def _prune(node: CausalTreeLearnNode):
+        def _prune(node: PEHENode):
             if node.true_branch is None or node.false_branch is None:
                 return
 
@@ -350,126 +231,3 @@ class CausalTreeLearn(CausalTree):
         check_dir(filename)
         with open(filename, "wb") as file:
             pkl.dump(self, file)
-
-    def _eval_fast_honest(self, train_x, train_y, train_t, val_x, val_y, val_t, unique_vals, col, est_x, est_y, est_t):
-
-        min_size = self.min_size
-        val_size = self.val_split * self.min_size if self.val_split * self.min_size > 2 else 2
-
-        train_col_x = train_x[:, col]
-        val_col_x = val_x[:, col]
-        est_col_x = est_x[:, col]
-
-        xx = np.tile(train_col_x, (unique_vals.shape[0], 1))
-        yy = np.tile(train_y, (unique_vals.shape[0], 1))
-        tt = np.tile(train_t, (unique_vals.shape[0], 1))
-
-        val_xx = np.tile(val_col_x, (unique_vals.shape[0], 1))
-        val_yy = np.tile(val_y, (unique_vals.shape[0], 1))
-        val_tt = np.tile(val_t, (unique_vals.shape[0], 1))
-
-        est_xx = np.tile(est_col_x, (unique_vals.shape[0], 1))
-        # est_yy = np.tile(est_y, (unique_vals.shape[0], 1))
-        est_tt = np.tile(est_t, (unique_vals.shape[0], 1))
-
-        idx_x = np.transpose(np.transpose(xx) >= unique_vals)
-        val_idx_x = np.transpose(np.transpose(val_xx) >= unique_vals)
-        est_idx_x = np.transpose(np.transpose(est_xx) >= unique_vals)
-
-        train_denom_treated_upper = idx_x * (tt == 1)
-        train_denom_control_upper = idx_x * (tt == 0)
-        train_treat_nums_upper = np.sum(train_denom_treated_upper, axis=1)
-        train_control_nums_upper = np.sum(train_denom_control_upper, axis=1)
-        train_denom_treated_lower = ~idx_x * (tt == 1)
-        train_denom_control_lower = ~idx_x * (tt == 0)
-        train_treat_nums_lower = np.sum(train_denom_treated_lower, axis=1)
-        train_control_nums_lower = np.sum(train_denom_control_lower, axis=1)
-
-        val_denom_treated_upper = val_idx_x * (val_tt == 1)
-        val_denom_control_upper = val_idx_x * (val_tt == 0)
-        val_treat_nums_upper = np.sum(val_denom_treated_upper, axis=1)
-        val_control_nums_upper = np.sum(val_denom_control_upper, axis=1)
-        val_denom_treated_lower = ~val_idx_x * (val_tt == 1)
-        val_denom_control_lower = ~val_idx_x * (val_tt == 0)
-        val_treat_nums_lower = np.sum(val_denom_treated_lower, axis=1)
-        val_control_nums_lower = np.sum(val_denom_control_lower, axis=1)
-
-        est_denom_treated_upper = est_idx_x * (est_tt == 1)
-        est_denom_control_upper = est_idx_x * (est_tt == 0)
-        est_treat_nums_upper = np.sum(est_denom_treated_upper, axis=1)
-        est_control_nums_upper = np.sum(est_denom_control_upper, axis=1)
-        est_denom_treated_lower = ~est_idx_x * (est_tt == 1)
-        est_denom_control_lower = ~est_idx_x * (est_tt == 0)
-        est_treat_nums_lower = np.sum(est_denom_treated_lower, axis=1)
-        est_control_nums_lower = np.sum(est_denom_control_lower, axis=1)
-
-        split_upper_check = np.logical_and(train_treat_nums_upper >= min_size, train_control_nums_upper >= min_size)
-        split_lower_check = np.logical_and(train_treat_nums_lower >= min_size, train_control_nums_lower >= min_size)
-        val_split_upper_check = np.logical_and(val_treat_nums_upper >= val_size, val_control_nums_upper >= val_size)
-        val_split_lower_check = np.logical_and(val_treat_nums_lower >= val_size, val_control_nums_lower >= val_size)
-        est_split_upper_check = np.logical_and(est_treat_nums_upper >= min_size, est_control_nums_upper >= min_size)
-        est_split_lower_check = np.logical_and(est_treat_nums_lower >= min_size, est_control_nums_lower >= min_size)
-        train_split_check = np.logical_and(split_upper_check, split_lower_check)
-        val_split_check = np.logical_and(val_split_upper_check, val_split_lower_check)
-        est_split_check = np.logical_and(est_split_upper_check, est_split_lower_check)
-        train_val_check = np.logical_and(train_split_check, val_split_check)
-        train_est_check = np.logical_and(train_val_check, est_split_check)
-        min_size_idx = np.where(train_est_check)
-
-        if len(min_size_idx[0]) < 1:
-            return -np.inf, -np.inf, -np.inf, -np.inf
-
-        unique_vals = unique_vals[min_size_idx]
-
-        # idx_x = idx_x[min_size_idx]
-        yy = yy[min_size_idx]
-        # tt = tt[min_size_idx]
-        train_denom_treated_upper = train_denom_treated_upper[min_size_idx]
-        train_denom_control_upper = train_denom_control_upper[min_size_idx]
-        train_denom_treated_lower = train_denom_treated_lower[min_size_idx]
-        train_denom_control_lower = train_denom_control_lower[min_size_idx]
-
-        # val_idx_x = val_idx_x[min_size_idx]
-        val_yy = val_yy[min_size_idx]
-        # val_tt = val_tt[min_size_idx]
-        val_denom_treated_upper = val_denom_treated_upper[min_size_idx]
-        val_denom_control_upper = val_denom_control_upper[min_size_idx]
-        val_denom_treated_lower = val_denom_treated_lower[min_size_idx]
-        val_denom_control_lower = val_denom_control_lower[min_size_idx]
-
-        train_um1 = np.sum(yy * train_denom_treated_upper, axis=1) / np.sum(train_denom_treated_upper, axis=1)
-        train_um0 = np.sum(yy * train_denom_control_upper, axis=1) / np.sum(train_denom_control_upper, axis=1)
-        train_upper_effect = train_um1 - train_um0
-        train_lm1 = np.sum(yy * train_denom_treated_lower, axis=1) / np.sum(train_denom_treated_lower, axis=1)
-        train_lm0 = np.sum(yy * train_denom_control_lower, axis=1) / np.sum(train_denom_control_lower, axis=1)
-        train_lower_effect = train_lm1 - train_lm0
-
-        val_um1 = np.sum(val_yy * val_denom_treated_upper, axis=1) / np.sum(val_denom_treated_upper, axis=1)
-        val_um0 = np.sum(val_yy * val_denom_control_upper, axis=1) / np.sum(val_denom_control_upper, axis=1)
-        val_upper_effect = val_um1 - val_um0
-        val_lm1 = np.sum(val_yy * val_denom_treated_lower, axis=1) / np.sum(val_denom_treated_lower, axis=1)
-        val_lm0 = np.sum(val_yy * val_denom_control_lower, axis=1) / np.sum(val_denom_control_lower, axis=1)
-        val_lower_effect = val_lm1 - val_lm0
-
-        train_upper_mse = train_upper_effect ** 2
-        upper_cost = np.abs(train_upper_effect - val_upper_effect)
-        upper_obj = train_upper_mse - upper_cost
-        train_lower_mse = train_lower_effect ** 2
-        lower_cost = np.abs(train_lower_effect - val_lower_effect)
-        lower_obj = train_lower_mse - lower_cost
-
-        split_obj = upper_obj + lower_obj
-        best_obj_idx = np.argmax(split_obj)
-        best_upper_obj = upper_obj[best_obj_idx]
-        best_lower_obj = lower_obj[best_obj_idx]
-        best_split_obj = split_obj[best_obj_idx]
-        val = unique_vals[best_obj_idx]
-
-        if self.honest:
-            upper_var_treated, upper_var_control = variance(yy[best_obj_idx][idx_x[best_obj_idx]],
-                                                            tt[best_obj_idx][idx_x[best_obj_idx]])
-            lower_var_treated, lower_var_control = variance(yy[best_obj_idx][idx_x[best_obj_idx]],
-                                                            tt[best_obj_idx][idx_x[best_obj_idx]])
-            return best_split_obj, best_upper_obj, best_lower_obj, upper_var_treated, upper_var_control, lower_var_treated, lower_var_control, val
-
-        return best_split_obj, best_upper_obj, best_lower_obj, val

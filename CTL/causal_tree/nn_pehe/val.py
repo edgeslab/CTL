@@ -1,8 +1,8 @@
-from CTL.causal_tree.ctl.binary_ctl import *
+from CTL.causal_tree.nn_pehe.tree import *
 from sklearn.model_selection import train_test_split
 
 
-class BaseCausalTreeLearnNode(CTLearnNode):
+class BaseNode(PEHENode):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -13,11 +13,11 @@ class BaseCausalTreeLearnNode(CTLearnNode):
 # ----------------------------------------------------------------
 # Base causal tree (ctl, base objective)
 # ----------------------------------------------------------------
-class CausalTreeLearnBase(CTLearn):
+class BasePEHE(PEHETree):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.root = BaseCausalTreeLearnNode()
+        self.root = BaseNode()
 
     def fit(self, x, y, t):
         if x.shape[0] == 0:
@@ -62,7 +62,7 @@ class CausalTreeLearnBase(CTLearn):
 
         self._fit(self.root, train_x, train_y, train_t, val_x, val_y, val_t)
 
-    def _fit(self, node: BaseCausalTreeLearnNode, train_x, train_y, train_t, val_x, val_y, val_t):
+    def _fit(self, node: BaseNode, train_x, train_y, train_t, val_x, val_y, val_t):
 
         if train_x.shape[0] == 0 or val_x.shape[0] == 0:
             return node
@@ -175,12 +175,12 @@ class CausalTreeLearnBase(CTLearn):
             # Ignore "mse" here, come back to it later?
             # ----------------------------------------------------------------
 
-            tb = BaseCausalTreeLearnNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
-                                         node_depth=node.node_depth + 1,
-                                         num_samples=y1.shape[0])
-            fb = BaseCausalTreeLearnNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
-                                         node_depth=node.node_depth + 1,
-                                         num_samples=y2.shape[0])
+            tb = BaseNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
+                          node_depth=node.node_depth + 1,
+                          num_samples=y1.shape[0])
+            fb = BaseNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
+                          node_depth=node.node_depth + 1,
+                          num_samples=y2.shape[0])
 
             node.true_branch = self._fit(tb, train_x1, train_y1, train_t1, val_x1, val_y1, val_t1)
             node.false_branch = self._fit(fb, train_x2, train_y2, train_t2, val_x2, val_y2, val_t2)

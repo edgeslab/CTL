@@ -1,13 +1,14 @@
 from CTL.tree import *
+from abc import ABC, abstractmethod
 
 
-class CausalTreeNode(Node):
+class CTNode(ABC):
 
     def __init__(self):
         super().__init__()
 
 
-class CausalTree(Tree):
+class CausalTree(ABC):
 
     def __init__(self):
         super().__init__()

@@ -3,12 +3,12 @@ try:
     from CTL.causal_tree.util_c import *
 except:
     from CTL.causal_tree.util import *
-from CTL.causal_tree.causal_tree import *
+from CTL.causal_tree.ct import *
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
 
-class CausalTreeLearnNode(CausalTreeNode):
+class CTLearnNode(CTNode):
 
     def __init__(self, p_val=1.0, effect=0.0, node_depth=0, control_mean=0.0, treatment_mean=0.0, col=-1, value=-1,
                  is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0):
@@ -60,7 +60,7 @@ class CTLMatch(CausalTree):
 
         self.honest = honest
 
-        self.root = CausalTreeLearnNode()
+        self.root = CTLearnNode()
 
     @abstractmethod
     def fit(self, x, y, t):
@@ -255,7 +255,7 @@ class CTLMatch(CausalTree):
 
     def predict(self, x):
 
-        def _predict(node: CausalTreeLearnNode, observation):
+        def _predict(node: CTLearnNode, observation):
             if node.is_leaf:
                 return node.effect
             else:
@@ -283,7 +283,7 @@ class CTLMatch(CausalTree):
 
     def get_groups(self, x):
 
-        def _get_group(node: CausalTreeLearnNode, observation):
+        def _get_group(node: CTLearnNode, observation):
             if node.is_leaf:
                 return node.leaf_num
             else:
@@ -308,7 +308,7 @@ class CTLMatch(CausalTree):
 
     def get_features(self, x):
 
-        def _get_features(node: CausalTreeLearnNode, observation, features):
+        def _get_features(node: CTLearnNode, observation, features):
             if node.is_leaf:
                 return features
             else:
@@ -336,7 +336,7 @@ class CTLMatch(CausalTree):
 
     def prune(self, alpha=0.05):
 
-        def _prune(node: CausalTreeLearnNode):
+        def _prune(node: CTLearnNode):
             if node.true_branch is None or node.false_branch is None:
                 return
 

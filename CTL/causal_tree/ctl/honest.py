@@ -2,7 +2,7 @@ from CTL.causal_tree.ctl.binary_ctl import *
 from sklearn.model_selection import train_test_split
 
 
-class HonestNode(CausalTreeLearnNode):
+class HonestNode(CTLearnNode):
 
     def __init__(self, var=0.0, **kwargs):
         super().__init__(**kwargs)
@@ -13,7 +13,7 @@ class HonestNode(CausalTreeLearnNode):
 # ----------------------------------------------------------------
 # Base causal tree (ctl, base objective)
 # ----------------------------------------------------------------
-class HonestTree(CausalTreeLearn):
+class HonestTree(CTLearn):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

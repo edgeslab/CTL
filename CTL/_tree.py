@@ -1,28 +1,17 @@
-from CTL.causal_tree.ctl_match.ctl_base import *
+try:
+    from CTL.causal_tree.util_c import *
+except:
+    from CTL.causal_tree.util import *
 
 
-class CausalTreeMatch:
+class _CausalTree:
 
-    def __init__(self, cont=False, val_honest=False, honest=False, min_size=2, max_depth=-1, split_size=0.5, weight=0.5,
-                 seed=724, quartile=False, old_trigger_code=False, feature_batch_size=None, magnitude=True):
-        self.cont = cont
-
-        params = {"min_size": min_size, "max_depth": max_depth, "split_size": split_size, "weight": weight,
-                  "seed": seed, "magnitude": magnitude, "honest": True if honest or val_honest else False,
-                  "feature_batch_size": feature_batch_size}
-        self.tree = CTLMatchBase(**params)
-        self.column_num = 0
-        self.fitted = False
-        self.tree_depth = 0
+    def __init__(self):
+        self.cont = False
+        pass
 
     def fit(self, x, y, t):
-        self.column_num = x.shape[1]
-        x = x.astype(np.float)
-        y = y.astype(np.float)
-        t = t.astype(np.float)
-        self.tree.fit(x, y, t)
-        self.fitted = True
-        self.tree_depth = self.tree.tree_depth
+        pass
 
     def predict(self, x):
         if self.fitted:
@@ -118,7 +107,7 @@ class CausalTreeMatch:
                                 show_samples=show_samples, show_effect=show_effect, trigger_precision=trigger_precision)
             dot_file.write("}")
 
-    def _tree_to_dot_r(self, node: CTLearnNode, features, dot_file, counter, alpha=0.5, show_pval=True,
+    def _tree_to_dot_r(self, node, features, dot_file, counter, alpha=0.5, show_pval=True,
                        show_samples=True,
                        show_effect=True, trigger_precision=2):
 
@@ -279,7 +268,7 @@ class CausalTreeMatch:
 
         variable_names = col_dict(feature_names)
 
-        def _assign_feature_names(node: CTLearnNode, feat_names):
+        def _assign_feature_names(node, feat_names):
 
             if not node.is_leaf:
                 sz_col = 'Column %s' % node.col
@@ -319,7 +308,7 @@ class CausalTreeMatch:
             if variable_names is not None:
                 self.assign_feature_names(feature_names=variable_names)
 
-        def _get_variables(node: CTLearnNode, list_vars, list_depths):
+        def _get_variables(node, list_vars, list_depths):
 
             # print(node.is_leaf, node.true_branch, node.false_branch)
             if node.is_leaf:
