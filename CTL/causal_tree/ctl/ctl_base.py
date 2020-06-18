@@ -37,7 +37,7 @@ class CausalTreeLearnBase(CTLearn):
         # ----------------------------------------------------------------
         train_x, val_x, train_y, val_y, train_t, val_t = train_test_split(x, y, t, random_state=self.seed, shuffle=True,
                                                                           test_size=self.val_split)
-        self.root.num_samples = y.shape[0]
+        self.root.num_samples = train_y.shape[0]
         # ----------------------------------------------------------------
         # effect and pvals
         # ----------------------------------------------------------------
