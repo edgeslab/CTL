@@ -8,6 +8,7 @@ from scipy.spatial import cKDTree
 
 
 # TODO: Add weighting on evaluations
+# TODO: add weighting on k > 1 nearest neighbors?
 
 def compute_nn_effect(x, y, t, k=1):
     kdtree = cKDTree(x)
@@ -46,6 +47,7 @@ class PEHENode(CTNode):
         # during tree building
         self.obj = obj
         self.num_samples = num_samples
+        self.pehe = 0
 
         # after building tree
         self.col = col
@@ -62,10 +64,9 @@ class PEHENode(CTNode):
 
 class PEHETree(CausalTree):
 
-    def __init__(self, weight=0.5, split_size=0.5, max_depth=-1, min_size=2, seed=724, feature_batch_size=None,
-                 magnitude=True, honest=False, max_values=None, verbose=False, k=1):
+    def __init__(self, split_size=0.5, max_depth=-1, min_size=2, max_values=None, verbose=False, k=1,
+                 seed=724):
         super().__init__()
-        self.weight = weight
         self.val_split = split_size
         self.max_depth = max_depth
         self.min_size = min_size
@@ -78,30 +79,16 @@ class PEHETree(CausalTree):
         self.min_effect = 0.0
 
         self.features = None
-        self.feature_batch_size = feature_batch_size
-        self.magnitude = magnitude
-
-        self.honest = honest
 
         self.k = k
         self.num_training = 1
+        self.pehe = 0
 
         self.root = PEHENode()
 
     @abstractmethod
     def fit(self, x, y, t):
         pass
-
-    def _eval(self, train_y, train_t, nn_effect):
-
-        treated = np.where(train_t == 1)[0]
-        control = np.where(train_t == 0)[0]
-
-        pred_effect = np.mean(train_y[treated]) - np.mean(train_y[control])
-        # nn_pehe = np.mean((nn_effect - pred_effect) ** 2)
-        nn_pehe = np.sum((nn_effect - pred_effect) ** 2)
-
-        return nn_pehe
 
     def predict(self, x):
 

@@ -48,8 +48,8 @@ class BasePEHE(PEHETree):
         # Not sure if i should eval in root or not
         # ----------------------------------------------------------------
         nn_pehe = self._eval(y, t, nn_effect)
-        self.root.obj = nn_pehe
-        self.obj = self.root.obj
+        self.root.pehe = nn_pehe
+        self.pehe = self.root.pehe
 
         # ----------------------------------------------------------------
         # Add control/treatment means
@@ -62,7 +62,19 @@ class BasePEHE(PEHETree):
         self._fit(self.root, x, y, t, nn_effect)
 
         if self.num_leaves > 0:
-            self.obj = self.obj / self.num_leaves
+            self.pehe = self.pehe / self.num_leaves
+
+    def _eval(self, train_y, train_t, nn_effect):
+
+        # treated = np.where(train_t == 1)[0]
+        # control = np.where(train_t == 0)[0]
+        # pred_effect = np.mean(train_y[treated]) - np.mean(train_y[control])
+        pred_effect = ace(train_y, train_t)
+
+        # nn_pehe = np.mean((nn_effect - pred_effect) ** 2)
+        nn_pehe = np.sum((nn_effect - pred_effect) ** 2)
+
+        return nn_pehe
 
     def _fit(self, node: BaseNode, train_x, train_y, train_t, nn_effect):
 
@@ -102,9 +114,8 @@ class BasePEHE(PEHETree):
                 tb_eval = self._eval(train_y1, train_t1, nn_effect1)
                 fb_eval = self._eval(train_y2, train_t2, nn_effect2)
 
-                # split_eval = (tb_eval + fb_eval) / 2
                 split_eval = (tb_eval + fb_eval)
-                gain = node.obj - split_eval
+                gain = node.pehe - split_eval
 
                 if gain > best_gain:
                     best_gain = gain
@@ -132,7 +143,7 @@ class BasePEHE(PEHETree):
             tb_p_val = get_pval(y1, t1)
             fb_p_val = get_pval(y2, t2)
 
-            self.obj = self.obj - node.obj + best_tb_obj + best_fb_obj
+            self.pehe = self.pehe - node.pehe + best_tb_obj + best_fb_obj
 
             tb = BaseNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
                           node_depth=node.node_depth + 1,
