@@ -141,8 +141,10 @@ class ValPEHE(PEHETree):
                 check2 = check_min_size(self.min_size, train_t2)
                 if check1 or check2:
                     continue
-                (_, _, nn_effect1, nn_effect2, val_nn_effect1, val_nn_effect2) \
-                    = divide_set(train_x, nn_effect, val_nn_effect, col, value)
+                (_, _, nn_effect1, nn_effect2, _, _) \
+                    = divide_set(train_x, nn_effect, train_t, col, value)
+                (_, _, val_nn_effect1, val_nn_effect2, _, _) \
+                    = divide_set(val_x, val_nn_effect, val_t, col, value)
 
                 tb_eval, tb_nn_pehe = self._eval(train_y1, train_t1, nn_effect1, val_y1, val_t1, val_nn_effect1)
                 fb_eval, fb_nn_pehe = self._eval(train_y2, train_t2, nn_effect2, val_y2, val_t2, val_nn_effect2)
@@ -166,8 +168,10 @@ class ValPEHE(PEHETree):
                 = divide_set(train_x, train_y, train_t, node.col, node.value)
             (val_x1, val_x2, val_y1, val_y2, val_t1, val_t2) \
                 = divide_set(val_x, val_y, val_t, node.col, node.value)
-            (_, _, nn_effect1, nn_effect2, val_nn_effect1, val_nn_effect2) \
-                = divide_set(train_x, nn_effect, val_nn_effect, node.col, node.value)
+            (_, _, nn_effect1, nn_effect2, _, _) \
+                = divide_set(train_x, nn_effect, train_t, node.col, node.value)
+            (_, _, val_nn_effect1, val_nn_effect2, _, _) \
+                = divide_set(val_x, val_nn_effect, val_t, node.col, node.value)
 
             # y1 = train_y1
             # y2 = train_y2

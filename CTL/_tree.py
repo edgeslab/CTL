@@ -179,36 +179,49 @@ class _CausalTree:
         color_idx = 0
         effect = node.effect
         eps = 0.01
-        if np.abs(effect) <= eps:
-            color = "white"
+        if self.tree.max_effect > 1 or self.tree.min_effect < -1:
+            effect_range = np.linspace(self.tree.min_effect, self.tree.max_effect, 10)
+            for idx, effect_r in enumerate(effect_range[:-1]):
+                if effect_range[idx] <= effect <= effect_range[idx + 1]:
+                    # color = "\"/blues9/%i\"" % (idx + 1)
+                    # rdbu9
+                    color = "\"/rdbu9/%i\"" % (idx + 1)
+                    color_idx = idx
+                    break
+            if color_idx >= 8:
+                font_color = ", fontcolor=white"
+                node_str.append(font_color)
         else:
-            if effect > 0:
-                # effect_range = np.linspace(0, self.max, 10)
-                effect_range = np.linspace(0, 1, 10)
-                for idx, effect_r in enumerate(effect_range[:-1]):
-                    if effect_range[idx] <= effect <= effect_range[idx + 1]:
-                        color = "\"/blues9/%i\"" % (idx + 1)
-                        color_idx = idx
-                        break
-                if color_idx >= 8:
-                    font_color = ", fontcolor=white"
-                    node_str.append(font_color)
+            if np.abs(effect) <= eps:
+                color = "white"
             else:
-                # effect_range = np.linspace(self.min, 0, 10)
-                effect_range = np.linspace(-1, 0, 10)[::-1]
-                for idx, effect_r in enumerate(effect_range[:-1]):
-                    # if effect_range[idx] >= effect >= effect_range[idx + 1]:
-                    #         color = "\"/reds9/%i\"" % (idx + 1)
-                    #         color_idx = idx
-                    #         break
-                    # if effect <= effect_range[idx] and effect >= effect_range[idx+1]:
-                    if effect_range[idx + 1] <= effect <= effect_range[idx]:
-                        color = "\"/reds9/%i\"" % (idx + 1)
-                        color_idx = idx
-                        break
-                if color_idx >= 8:
-                    font_color = ", fontcolor=white"
-                    node_str.append(font_color)
+                if effect > 0:
+                    # effect_range = np.linspace(0, self.max, 10)
+                    effect_range = np.linspace(0, 1, 10)
+                    for idx, effect_r in enumerate(effect_range[:-1]):
+                        if effect_range[idx] <= effect <= effect_range[idx + 1]:
+                            color = "\"/blues9/%i\"" % (idx + 1)
+                            color_idx = idx
+                            break
+                    if color_idx >= 8:
+                        font_color = ", fontcolor=white"
+                        node_str.append(font_color)
+                else:
+                    # effect_range = np.linspace(self.min, 0, 10)
+                    effect_range = np.linspace(-1, 0, 10)[::-1]
+                    for idx, effect_r in enumerate(effect_range[:-1]):
+                        # if effect_range[idx] >= effect >= effect_range[idx + 1]:
+                        #         color = "\"/reds9/%i\"" % (idx + 1)
+                        #         color_idx = idx
+                        #         break
+                        # if effect <= effect_range[idx] and effect >= effect_range[idx+1]:
+                        if effect_range[idx + 1] <= effect <= effect_range[idx]:
+                            color = "\"/reds9/%i\"" % (idx + 1)
+                            color_idx = idx
+                            break
+                    if color_idx >= 8:
+                        font_color = ", fontcolor=white"
+                        node_str.append(font_color)
 
         color_str = ", fillcolor=" + color
         node_str.append(color_str)

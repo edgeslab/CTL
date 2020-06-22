@@ -9,6 +9,7 @@ class PEHETree(_CausalTree):
     def __init__(self, min_size=2, max_depth=-1, k=1,
                  val=False, split_size=0.5,
                  honest=False,
+                 use_propensity=False, propensity_model=None,
                  seed=724):
         super().__init__()
 
@@ -17,7 +18,9 @@ class PEHETree(_CausalTree):
             "max_depth": max_depth,
             "k": k,
             "seed": seed,
-            "split_size": split_size
+            "split_size": split_size,
+            "use_propensity": use_propensity,
+            "propensity_model": propensity_model
         }
         if val:
             self.tree = ValPEHE(**params)

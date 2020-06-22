@@ -24,8 +24,8 @@ def compute_nn_effect(x, y, t, k=1):
         i_treat_idx = np.where(bool_treated[i, :])[0][:k]
         i_control_idx = np.where(bool_control[i, :])[0][:k]
 
-        i_treat_nn = y[i_treat_idx]
-        i_cont_nn = y[i_control_idx]
+        i_treat_nn = y[idx[i, i_treat_idx]]
+        i_cont_nn = y[idx[i, i_control_idx]]
 
         nn_effect[i] = np.mean(i_treat_nn) - np.mean(i_cont_nn)
 
@@ -64,7 +64,8 @@ class PEHENode(CTNode):
 
 class PEHETree(CausalTree):
 
-    def __init__(self, split_size=0.5, max_depth=-1, min_size=2, max_values=None, verbose=False, k=1,
+    def __init__(self, split_size=0.5, max_depth=-1, min_size=2, max_values=None, verbose=False,
+                 k=1, use_propensity=False, propensity_model=None,
                  seed=724):
         super().__init__()
         self.val_split = split_size
@@ -83,8 +84,42 @@ class PEHETree(CausalTree):
         self.k = k
         self.num_training = 1
         self.pehe = 0
+        self.use_propensity = use_propensity
+        if use_propensity:
+            if propensity_model is not None:
+                self.proensity_model = propensity_model
+            else:
+                from sklearn.linear_model import LogisticRegression
+                self.proensity_model = LogisticRegression()
 
         self.root = PEHENode()
+
+    def compute_nn_effect(self, x, y, t, k=1):
+        if self.use_propensity:
+            self.proensity_model.fit(x, t)
+            propensity = self.proensity_model.predict_proba(x)[:, 1:]
+            kdtree = cKDTree(propensity)
+            _, idx = kdtree.query(propensity, k=x.shape[0])
+        else:
+            kdtree = cKDTree(x)
+            _, idx = kdtree.query(x, k=x.shape[0])
+        idx = idx[:, 1:]
+        treated = np.where(t == 1)[0]
+        control = np.where(t == 0)[0]
+        bool_treated = np.isin(idx, treated)
+        bool_control = np.isin(idx, control)
+
+        nn_effect = np.zeros(x.shape)
+        for i in range(len(bool_treated)):
+            i_treat_idx = np.where(bool_treated[i, :])[0][:k]
+            i_control_idx = np.where(bool_control[i, :])[0][:k]
+
+            i_treat_nn = y[idx[i, i_treat_idx]]
+            i_cont_nn = y[idx[i, i_control_idx]]
+
+            nn_effect[i] = np.mean(i_treat_nn) - np.mean(i_cont_nn)
+
+        return nn_effect
 
     @abstractmethod
     def fit(self, x, y, t):

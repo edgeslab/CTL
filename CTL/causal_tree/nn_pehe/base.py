@@ -34,7 +34,7 @@ class BasePEHE(PEHETree):
         # NN_effect estimates
         # use the overall datasets for nearest neighbor for now
         # ----------------------------------------------------------------
-        nn_effect = compute_nn_effect(x, y, t, k=self.k)
+        nn_effect = self.compute_nn_effect(x, y, t, k=self.k)
 
         # ----------------------------------------------------------------
         # effect and pvals
@@ -157,7 +157,7 @@ class BasePEHE(PEHETree):
 
             if node.effect > self.max_effect:
                 self.max_effect = node.effect
-            else:
+            if node.effect < self.min_effect:
                 self.min_effect = node.effect
 
             return node
