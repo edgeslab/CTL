@@ -93,6 +93,7 @@ class BasePEHE(PEHETree):
         # print(self.tree_depth, self.obj)
 
         best_gain = 0.0
+        # best_gain = node.pehe  # min amount
         best_attributes = []
         best_tb_obj, best_fb_obj = (0.0, 0.0)
 
@@ -145,10 +146,10 @@ class BasePEHE(PEHETree):
 
             self.pehe = self.pehe - node.pehe + best_tb_obj + best_fb_obj
 
-            tb = BaseNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
+            tb = BaseNode(obj=best_tb_obj, pehe=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
                           node_depth=node.node_depth + 1,
                           num_samples=y1.shape[0])
-            fb = BaseNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
+            fb = BaseNode(obj=best_fb_obj, pehe=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
                           node_depth=node.node_depth + 1,
                           num_samples=y2.shape[0])
 

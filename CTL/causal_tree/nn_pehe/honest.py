@@ -181,10 +181,10 @@ class HonestPEHE(PEHETree):
 
             self.obj = self.obj - node.obj + best_tb_obj + best_fb_obj
 
-            tb = HonestNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
+            tb = HonestNode(obj=best_tb_obj, pehe=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
                             node_depth=node.node_depth + 1,
                             num_samples=train_y1.shape[0])
-            fb = HonestNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
+            fb = HonestNode(obj=best_fb_obj, pehe=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
                             node_depth=node.node_depth + 1,
                             num_samples=train_y2.shape[0])
 

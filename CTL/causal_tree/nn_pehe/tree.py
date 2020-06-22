@@ -35,7 +35,7 @@ def compute_nn_effect(x, y, t, k=1):
 class PEHENode(CTNode):
 
     def __init__(self, p_val=1.0, effect=0.0, node_depth=0, control_mean=0.0, treatment_mean=0.0, col=-1, value=-1,
-                 is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0):
+                 is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0, pehe=0.0):
         super().__init__()
         # not tree specific features (most likely added at creation)
         self.p_val = p_val
@@ -47,7 +47,7 @@ class PEHENode(CTNode):
         # during tree building
         self.obj = obj
         self.num_samples = num_samples
-        self.pehe = 0
+        self.pehe = pehe
 
         # after building tree
         self.col = col
