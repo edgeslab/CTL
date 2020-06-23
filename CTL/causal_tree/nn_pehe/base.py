@@ -14,9 +14,10 @@ class BaseNode(PEHENode):
 # ----------------------------------------------------------------
 class BasePEHE(PEHETree):
 
-    def __init__(self, **kwargs):
+    def __init__(self, eval2=False, **kwargs):
         super().__init__(**kwargs)
         self.root = BaseNode()
+        self.eval2 = eval2
 
     def fit(self, x, y, t):
         if x.shape[0] == 0:
@@ -76,6 +77,40 @@ class BasePEHE(PEHETree):
 
         return nn_pehe
 
+    def _eval2(self, unique_vals, x, y, t, nn_effect, col, node_pehe):
+        above_pehe = np.inf * np.ones(unique_vals.shape)
+        below_pehe = np.inf * np.ones(unique_vals.shape)
+        for i, val in enumerate(unique_vals):
+            below_idx = (x[:, col] < val)
+            above_idx = (x[:, col] >= val)
+            below_treated_idx = y[below_idx & (t == 1)]
+            below_control_idx = y[below_idx & (t == 0)]
+            if len(below_treated_idx) < self.min_size or len(below_control_idx) < self.min_size:
+                continue
+            above_treated_idx = y[above_idx & (t == 1)]
+            above_control_idx = y[above_idx & (t == 0)]
+            if len(above_treated_idx) < self.min_size or len(above_control_idx) < self.min_size:
+                continue
+            below_treat_mean = np.mean(below_treated_idx)
+            below_control_mean = np.mean(below_control_idx)
+
+            above_treat_mean = np.mean(above_treated_idx)
+            above_control_mean = np.mean(above_control_idx)
+
+            below_pehe[i] = np.sum((nn_effect[below_idx] - (below_treat_mean - below_control_mean)) ** 2)
+            above_pehe[i] = np.sum((nn_effect[above_idx] - (above_treat_mean - above_control_mean)) ** 2)
+        sum_pehe = above_pehe + below_pehe
+        # gain = node_pehe - sum_pehe
+
+        # best_pehe_idx = np.argmax(gain)
+        best_pehe_idx = np.argmin(sum_pehe)
+        best_val = unique_vals[best_pehe_idx]
+        best_pehe = sum_pehe[best_pehe_idx]
+        best_tb_pehe = above_pehe[best_pehe_idx]
+        best_fb_pehe = below_pehe[best_pehe_idx]
+
+        return best_pehe, best_val, best_tb_pehe, best_fb_pehe
+
     def _fit(self, node: BaseNode, train_x, train_y, train_t, nn_effect):
 
         if train_x.shape[0] == 0:
@@ -122,8 +157,38 @@ class BasePEHE(PEHETree):
                     best_gain = gain
                     best_attributes = [col, value]
                     best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
-
-                # print(tb_eval, fb_eval, gain, best_gain)
+            # if self.eval2:
+            #     split_eval, value, tb_eval, fb_eval = self._eval2(unique_vals, train_x, train_y, train_t, nn_effect,
+            #                                                       col, node.pehe)
+            #
+            #     gain = node.pehe - split_eval
+            #
+            #     if gain > best_gain:
+            #         best_gain = gain
+            #         best_attributes = [col, value]
+            #         best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
+            # else:
+            #     for value in unique_vals:
+            #         # check training data size
+            #         (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
+            #             = divide_set(train_x, train_y, train_t, col, value)
+            #         check1 = check_min_size(self.min_size, train_t1)
+            #         check2 = check_min_size(self.min_size, train_t2)
+            #         if check1 or check2:
+            #             continue
+            #         (_, _, nn_effect1, nn_effect2, _, _) \
+            #             = divide_set(train_x, nn_effect, train_t, col, value)
+            #
+            #         tb_eval = self._eval(train_y1, train_t1, nn_effect1)
+            #         fb_eval = self._eval(train_y2, train_t2, nn_effect2)
+            #
+            #         split_eval = (tb_eval + fb_eval)
+            #         gain = node.pehe - split_eval
+            #
+            #         if gain > best_gain:
+            #             best_gain = gain
+            #             best_attributes = [col, value]
+            #             best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
 
         if best_gain > 0:
             node.col = best_attributes[0]

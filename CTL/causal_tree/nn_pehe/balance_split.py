@@ -12,38 +12,12 @@ class BaseNode(PEHENode):
 # ----------------------------------------------------------------
 # Base causal tree (ctl, base objective)
 # ----------------------------------------------------------------
-class BasePEHE(PEHETree):
+class BalanceBasePEHE(PEHETree):
 
-    def __init__(self, **kwargs):
+    def __init__(self, eval2=False, **kwargs):
         super().__init__(**kwargs)
         self.root = BaseNode()
-
-    def compute_nn_effect(self, x, y, t, k=1):
-        if self.use_propensity:
-            self.proensity_model.fit(x, t)
-            propensity = self.proensity_model.predict_proba(x)[:, 1:]
-            kdtree = cKDTree(propensity)
-            _, idx = kdtree.query(propensity, k=x.shape[0])
-        else:
-            kdtree = cKDTree(x)
-            _, idx = kdtree.query(x, k=x.shape[0])
-        idx = idx[:, 1:]
-        treated = np.where(t == 1)[0]
-        control = np.where(t == 0)[0]
-        bool_treated = np.isin(idx, treated)
-        bool_control = np.isin(idx, control)
-
-        nn_effect = np.zeros(x.shape)
-        for i in range(len(bool_treated)):
-            i_treat_idx = np.where(bool_treated[i, :])[0][:k]
-            i_control_idx = np.where(bool_control[i, :])[0][:k]
-
-            i_treat_nn = y[i_treat_idx]
-            i_cont_nn = y[i_control_idx]
-
-            nn_effect[i] = np.mean(i_treat_nn) - np.mean(i_cont_nn)
-
-        return nn_effect
+        self.eval2 = eval2
 
     def fit(self, x, y, t):
         if x.shape[0] == 0:
@@ -120,6 +94,7 @@ class BasePEHE(PEHETree):
         # print(self.tree_depth, self.obj)
 
         best_gain = 0.0
+        # best_gain = node.pehe  # min amount
         best_attributes = []
         best_tb_obj, best_fb_obj = (0.0, 0.0)
 
@@ -141,15 +116,47 @@ class BasePEHE(PEHETree):
                 tb_eval = self._eval(train_y1, train_t1, nn_effect1)
                 fb_eval = self._eval(train_y2, train_t2, nn_effect2)
 
+                split_difference = np.abs(tb_eval - fb_eval)
+
                 split_eval = (tb_eval + fb_eval)
-                gain = node.pehe - split_eval
+                gain = node.pehe - split_eval - split_difference
 
                 if gain > best_gain:
                     best_gain = gain
                     best_attributes = [col, value]
                     best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
-
-                # print(tb_eval, fb_eval, gain, best_gain)
+            # if self.eval2:
+            #     split_eval, value, tb_eval, fb_eval = self._eval2(unique_vals, train_x, train_y, train_t, nn_effect,
+            #                                                       col, node.pehe)
+            #
+            #     gain = node.pehe - split_eval
+            #
+            #     if gain > best_gain:
+            #         best_gain = gain
+            #         best_attributes = [col, value]
+            #         best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
+            # else:
+            #     for value in unique_vals:
+            #         # check training data size
+            #         (train_x1, train_x2, train_y1, train_y2, train_t1, train_t2) \
+            #             = divide_set(train_x, train_y, train_t, col, value)
+            #         check1 = check_min_size(self.min_size, train_t1)
+            #         check2 = check_min_size(self.min_size, train_t2)
+            #         if check1 or check2:
+            #             continue
+            #         (_, _, nn_effect1, nn_effect2, _, _) \
+            #             = divide_set(train_x, nn_effect, train_t, col, value)
+            #
+            #         tb_eval = self._eval(train_y1, train_t1, nn_effect1)
+            #         fb_eval = self._eval(train_y2, train_t2, nn_effect2)
+            #
+            #         split_eval = (tb_eval + fb_eval)
+            #         gain = node.pehe - split_eval
+            #
+            #         if gain > best_gain:
+            #             best_gain = gain
+            #             best_attributes = [col, value]
+            #             best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
 
         if best_gain > 0:
             node.col = best_attributes[0]

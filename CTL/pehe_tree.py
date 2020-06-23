@@ -2,6 +2,7 @@ from CTL._tree import _CausalTree
 from CTL.causal_tree.nn_pehe.base import *
 from CTL.causal_tree.nn_pehe.val import *
 from CTL.causal_tree.nn_pehe.honest import *
+from CTL.causal_tree.nn_pehe.balance_split import *
 
 
 class PEHETree(_CausalTree):
@@ -10,6 +11,7 @@ class PEHETree(_CausalTree):
                  val=False, split_size=0.5,
                  honest=False,
                  use_propensity=False, propensity_model=None,
+                 balance=False,
                  seed=724):
         super().__init__()
 
@@ -26,6 +28,8 @@ class PEHETree(_CausalTree):
             self.tree = ValPEHE(**params)
         elif honest:
             self.tree = HonestPEHE(**params)
+        elif balance:
+            self.tree = BalanceBasePEHE(**params)
         else:
             self.tree = BasePEHE(**params)
 
