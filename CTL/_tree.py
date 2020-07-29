@@ -348,5 +348,6 @@ class _CausalTree:
         return sorted_vars
 
     def save(self, filename):
+        check_dir(filename)
         with open(filename, "wb") as handle:
-            pkl.dump(self, filename)
+            pkl.dump(self, handle)
