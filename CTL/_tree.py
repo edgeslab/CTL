@@ -2,6 +2,7 @@ try:
     from CTL.causal_tree.util_c import *
 except:
     from CTL.causal_tree.util import *
+import pickle as pkl
 
 
 class _CausalTree:
@@ -345,3 +346,7 @@ class _CausalTree:
             sorted_vars.append(list_of_vars[i])
 
         return sorted_vars
+
+    def save(self, filename):
+        with open(filename, "wb") as handle:
+            pkl.dump(self, filename)
