@@ -91,6 +91,7 @@ class CausalTree(_CausalTree):
         self.column_num = 0
         self.fitted = False
         self.tree_depth = 0
+        self.root = self.tree.root
 
     def fit(self, x, y, t):
         self.column_num = x.shape[1]
