@@ -19,7 +19,7 @@ def compute_nn_effect(x, y, t, k=1):
     bool_treated = np.isin(idx, treated)
     bool_control = np.isin(idx, control)
 
-    nn_effect = np.zeros(x.shape[0])
+    nn_effect = np.zeros(x.shape)
     for i in range(len(bool_treated)):
         i_treat_idx = np.where(bool_treated[i, :])[0][:k]
         i_control_idx = np.where(bool_control[i, :])[0][:k]
@@ -32,7 +32,7 @@ def compute_nn_effect(x, y, t, k=1):
     return nn_effect
 
 
-class PEHENode(CTNode):
+class RNode(CTNode):
 
     def __init__(self, p_val=1.0, effect=0.0, node_depth=0, control_mean=0.0, treatment_mean=0.0, col=-1, value=-1,
                  is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0, pehe=0.0):
@@ -62,7 +62,7 @@ class PEHENode(CTNode):
         self.decision = ""
 
 
-class PEHETree(CausalTree):
+class RTree(CausalTree):
 
     def __init__(self, split_size=0.5, max_depth=-1, min_size=2, max_values=None, verbose=False,
                  k=1, use_propensity=False, propensity_model=None,
@@ -92,7 +92,7 @@ class PEHETree(CausalTree):
                 from sklearn.linear_model import LogisticRegression
                 self.proensity_model = LogisticRegression()
 
-        self.root = PEHENode()
+        self.root = RNode()
 
     def compute_nn_effect(self, x, y, t, k=1):
         if self.use_propensity:

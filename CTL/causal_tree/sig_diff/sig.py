@@ -1,41 +1,17 @@
+# from CTL.causal_tree.util import *
 try:
     from CTL.causal_tree.util_c import *
 except:
     from CTL.causal_tree.util import *
 from CTL.causal_tree.ct import *
 import numpy as np
-from scipy.spatial import cKDTree
+from scipy.stats import ttest_ind_from_stats
 
 
-# TODO: Add weighting on evaluations
-# TODO: add weighting on k > 1 nearest neighbors?
-
-def compute_nn_effect(x, y, t, k=1):
-    kdtree = cKDTree(x)
-    d, idx = kdtree.query(x, k=x.shape[0])
-    idx = idx[:, 1:]
-    treated = np.where(t == 1)[0]
-    control = np.where(t == 0)[0]
-    bool_treated = np.isin(idx, treated)
-    bool_control = np.isin(idx, control)
-
-    nn_effect = np.zeros(x.shape[0])
-    for i in range(len(bool_treated)):
-        i_treat_idx = np.where(bool_treated[i, :])[0][:k]
-        i_control_idx = np.where(bool_control[i, :])[0][:k]
-
-        i_treat_nn = y[idx[i, i_treat_idx]]
-        i_cont_nn = y[idx[i, i_control_idx]]
-
-        nn_effect[i] = np.mean(i_treat_nn) - np.mean(i_cont_nn)
-
-    return nn_effect
-
-
-class PEHENode(CTNode):
+class SigNode(CTNode):
 
     def __init__(self, p_val=1.0, effect=0.0, node_depth=0, control_mean=0.0, treatment_mean=0.0, col=-1, value=-1,
-                 is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0, pehe=0.0):
+                 is_leaf=False, leaf_num=-1, num_samples=0.0, obj=0.0):
         super().__init__()
         # not tree specific features (most likely added at creation)
         self.p_val = p_val
@@ -47,7 +23,6 @@ class PEHENode(CTNode):
         # during tree building
         self.obj = obj
         self.num_samples = num_samples
-        self.pehe = pehe
 
         # after building tree
         self.col = col
@@ -62,13 +37,11 @@ class PEHENode(CTNode):
         self.decision = ""
 
 
-class PEHETree(CausalTree):
+class SigTree(CausalTree):
 
-    def __init__(self, split_size=0.5, max_depth=-1, min_size=2, max_values=None, verbose=False,
-                 k=1, use_propensity=False, propensity_model=None,
-                 seed=724):
+    def __init__(self, alpha=0.05, max_depth=-1, min_size=2, seed=724, max_values=None, verbose=False):
         super().__init__()
-        self.val_split = split_size
+        self.alpha = 0.05
         self.max_depth = max_depth
         self.min_size = min_size
         self.seed = seed
@@ -81,53 +54,36 @@ class PEHETree(CausalTree):
 
         self.features = None
 
-        self.k = k
-        self.num_training = 1
-        self.pehe = 0
-        self.use_propensity = use_propensity
-        if use_propensity:
-            if propensity_model is not None:
-                self.proensity_model = propensity_model
-            else:
-                from sklearn.linear_model import LogisticRegression
-                self.proensity_model = LogisticRegression()
-
-        self.root = PEHENode()
-
-    def compute_nn_effect(self, x, y, t, k=1):
-        if self.use_propensity:
-            self.proensity_model.fit(x, t)
-            propensity = self.proensity_model.predict_proba(x)[:, 1:]
-            kdtree = cKDTree(propensity)
-            _, idx = kdtree.query(propensity, k=x.shape[0])
-        else:
-            kdtree = cKDTree(x)
-            _, idx = kdtree.query(x, k=x.shape[0])
-        idx = idx[:, 1:]
-        treated = np.where(t == 1)[0]
-        control = np.where(t == 0)[0]
-        bool_treated = np.isin(idx, treated)
-        bool_control = np.isin(idx, control)
-
-        nn_effect = np.zeros(x.shape)
-        for i in range(len(bool_treated)):
-            i_treat_idx = np.where(bool_treated[i, :])[0][:k]
-            i_control_idx = np.where(bool_control[i, :])[0][:k]
-
-            i_treat_nn = y[idx[i, i_treat_idx]]
-            i_cont_nn = y[idx[i, i_control_idx]]
-
-            nn_effect[i] = np.mean(i_treat_nn) - np.mean(i_cont_nn)
-
-        return nn_effect
+        self.root = SigNode()
 
     @abstractmethod
     def fit(self, x, y, t):
         pass
 
+    def _eval_util(self, train_y, train_t):
+        var_t, var_c = variance(train_y, train_t)
+        std = np.sqrt(var_t) + np.sqrt(var_c)
+        effect = ace(train_y, train_t)
+
+        return effect, std
+
+    def _eval(self, y_train1, t_train1, y_train2, t_train2):
+        effect1, std1 = self._eval_util(y_train1, t_train1)
+        effect2, std2 = self._eval_util(y_train2, t_train2)
+
+        total1 = y_train1.shape[0]
+        total2 = y_train2.shape[0]
+
+        return_val = (1, 1)
+        if total1 < 1 or total2 < 1:
+            return return_val
+        else:
+            stat, p_val = ttest_ind_from_stats(effect1, std1, total1, effect2, std2, total2)
+            return stat, p_val
+
     def predict(self, x):
 
-        def _predict(node: PEHENode, observation):
+        def _predict(node: SigNode, observation):
             if node.is_leaf:
                 return node.effect
             else:
@@ -155,7 +111,7 @@ class PEHETree(CausalTree):
 
     def get_groups(self, x):
 
-        def _get_group(node: PEHENode, observation):
+        def _get_group(node: SigNode, observation):
             if node.is_leaf:
                 return node.leaf_num
             else:
@@ -180,7 +136,7 @@ class PEHETree(CausalTree):
 
     def get_features(self, x):
 
-        def _get_features(node: PEHENode, observation, features):
+        def _get_features(node: SigNode, observation, features):
             if node.is_leaf:
                 return features
             else:
@@ -208,7 +164,7 @@ class PEHETree(CausalTree):
 
     def prune(self, alpha=0.05):
 
-        def _prune(node: PEHENode):
+        def _prune(node: SigNode):
             if node.true_branch is None or node.false_branch is None:
                 return
 

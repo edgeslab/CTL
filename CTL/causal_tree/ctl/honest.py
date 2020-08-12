@@ -2,7 +2,7 @@ from CTL.causal_tree.ctl.binary_ctl import *
 from sklearn.model_selection import train_test_split
 
 
-class HonestNode(CausalTreeLearnNode):
+class HonestNode(CTLearnNode):
 
     def __init__(self, var=0.0, **kwargs):
         super().__init__(**kwargs)
@@ -13,7 +13,7 @@ class HonestNode(CausalTreeLearnNode):
 # ----------------------------------------------------------------
 # Base causal tree (ctl, base objective)
 # ----------------------------------------------------------------
-class HonestTree(CausalTreeLearn):
+class HonestTree(CTLearn):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -98,6 +98,10 @@ class HonestTree(CausalTreeLearn):
             self.tree_depth = node.node_depth
 
         if self.max_depth == self.tree_depth:
+            if node.effect > self.max_effect:
+                self.max_effect = node.effect
+            if node.effect < self.min_effect:
+                self.min_effect = node.effect
             self.num_leaves += 1
             node.leaf_num = self.num_leaves
             node.is_leaf = True
@@ -199,7 +203,7 @@ class HonestTree(CausalTreeLearn):
 
             if node.effect > self.max_effect:
                 self.max_effect = node.effect
-            else:
+            if node.effect < self.min_effect:
                 self.min_effect = node.effect
 
             return node

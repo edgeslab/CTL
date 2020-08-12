@@ -96,6 +96,10 @@ class TriggerTreeHonest(TriggerTree):
             self.tree_depth = node.node_depth
 
         if self.max_depth == self.tree_depth:
+            if node.effect > self.max_effect:
+                self.max_effect = node.effect
+            if node.effect < self.min_effect:
+                self.min_effect = node.effect
             self.num_leaves += 1
             node.leaf_num = self.num_leaves
             node.is_leaf = True
@@ -207,7 +211,7 @@ class TriggerTreeHonest(TriggerTree):
 
             if node.effect > self.max_effect:
                 self.max_effect = node.effect
-            else:
+            if node.effect < self.min_effect:
                 self.min_effect = node.effect
 
             return node

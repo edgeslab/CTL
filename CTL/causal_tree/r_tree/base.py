@@ -1,7 +1,7 @@
-from CTL.causal_tree.nn_pehe.tree import *
+from CTL.causal_tree.r_tree.tree import *
 
 
-class BaseNode(PEHENode):
+class BaseNode(RNode):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -12,7 +12,7 @@ class BaseNode(PEHENode):
 # ----------------------------------------------------------------
 # Base causal tree (ctl, base objective)
 # ----------------------------------------------------------------
-class BasePEHE(PEHETree):
+class BaseRTree(RTree):
 
     def __init__(self, eval2=False, **kwargs):
         super().__init__(**kwargs)

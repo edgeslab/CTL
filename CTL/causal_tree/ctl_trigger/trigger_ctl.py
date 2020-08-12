@@ -3,7 +3,7 @@ from CTL.causal_tree.ctl.binary_ctl import *
 import numpy as np
 
 
-class TriggerNode(CausalTreeLearnNode):
+class TriggerNode(CTLearnNode):
 
     def __init__(self, trigger=0.0, **kwargs):
         # ----------------------------------------------------------------
@@ -14,7 +14,7 @@ class TriggerNode(CausalTreeLearnNode):
         self.trigger = trigger
 
 
-class TriggerTree(CausalTreeLearn):
+class TriggerTree(CTLearn):
 
     def __init__(self, quartile=True, old_trigger_code=False, **kwargs):
         super().__init__(**kwargs)

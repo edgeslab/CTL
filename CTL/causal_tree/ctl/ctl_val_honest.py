@@ -2,7 +2,7 @@ from CTL.causal_tree.ctl.binary_ctl import *
 from sklearn.model_selection import train_test_split
 
 
-class HonestValidationCausalTreeLearnNode(CausalTreeLearnNode):
+class HonestValidationCausalTreeLearnNode(CTLearnNode):
 
     def __init__(self, var=0.0, **kwargs):
         super().__init__(**kwargs)
@@ -13,7 +13,7 @@ class HonestValidationCausalTreeLearnNode(CausalTreeLearnNode):
 # ----------------------------------------------------------------
 # Honest = validation causal tree (ctl, base objective with honest penalty, no estimation set)
 # ----------------------------------------------------------------
-class CausalTreeLearnHonestValidation(CausalTreeLearn):
+class CausalTreeLearnHonestValidation(CTLearn):
 
     # ----------------------------------------------------------------
     # TODO: Not sure if I should estimate only with validation set???
@@ -106,6 +106,10 @@ class CausalTreeLearnHonestValidation(CausalTreeLearn):
             self.tree_depth = node.node_depth
 
         if self.max_depth == self.tree_depth:
+            if node.effect > self.max_effect:
+                self.max_effect = node.effect
+            if node.effect < self.min_effect:
+                self.min_effect = node.effect
             self.num_leaves += 1
             node.leaf_num = self.num_leaves
             node.is_leaf = True
@@ -303,7 +307,7 @@ class CausalTreeLearnHonestValidation(CausalTreeLearn):
 
             if node.effect > self.max_effect:
                 self.max_effect = node.effect
-            else:
+            if node.effect < self.min_effect:
                 self.min_effect = node.effect
 
             return node

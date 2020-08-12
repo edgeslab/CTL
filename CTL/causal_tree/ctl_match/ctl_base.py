@@ -2,7 +2,7 @@ from CTL.causal_tree.ctl_match.binary_ctl import *
 from sklearn.model_selection import train_test_split
 
 
-class BaseCausalTreeLearnNode(CausalTreeLearnNode):
+class BaseCausalTreeLearnNode(CTLearnNode):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -185,7 +185,7 @@ class CTLMatchBase(CTLMatch):
 
             if node.effect > self.max_effect:
                 self.max_effect = node.effect
-            else:
+            if node.effect < self.min_effect:
                 self.min_effect = node.effect
 
             return node

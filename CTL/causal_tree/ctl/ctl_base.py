@@ -2,7 +2,7 @@ from CTL.causal_tree.ctl.binary_ctl import *
 from sklearn.model_selection import train_test_split
 
 
-class BaseCausalTreeLearnNode(CausalTreeLearnNode):
+class BaseCausalTreeLearnNode(CTLearnNode):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -13,7 +13,7 @@ class BaseCausalTreeLearnNode(CausalTreeLearnNode):
 # ----------------------------------------------------------------
 # Base causal tree (ctl, base objective)
 # ----------------------------------------------------------------
-class CausalTreeLearnBase(CausalTreeLearn):
+class CausalTreeLearnBase(CTLearn):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -37,7 +37,7 @@ class CausalTreeLearnBase(CausalTreeLearn):
         # ----------------------------------------------------------------
         train_x, val_x, train_y, val_y, train_t, val_t = train_test_split(x, y, t, random_state=self.seed, shuffle=True,
                                                                           test_size=self.val_split)
-        self.root.num_samples = y.shape[0]
+        self.root.num_samples = train_y.shape[0]
         # ----------------------------------------------------------------
         # effect and pvals
         # ----------------------------------------------------------------
@@ -71,6 +71,10 @@ class CausalTreeLearnBase(CausalTreeLearn):
             self.tree_depth = node.node_depth
 
         if self.max_depth == self.tree_depth:
+            if node.effect > self.max_effect:
+                self.max_effect = node.effect
+            if node.effect < self.min_effect:
+                self.min_effect = node.effect
             self.num_leaves += 1
             node.leaf_num = self.num_leaves
             node.is_leaf = True
@@ -187,7 +191,7 @@ class CausalTreeLearnBase(CausalTreeLearn):
 
             if node.effect > self.max_effect:
                 self.max_effect = node.effect
-            else:
+            if node.effect < self.min_effect:
                 self.min_effect = node.effect
 
             return node

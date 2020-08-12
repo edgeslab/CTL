@@ -1,35 +1,17 @@
-from CTL.causal_tree.ctl.binary_ctl import *
-from sklearn.model_selection import train_test_split
+from CTL.causal_tree.sig_diff.sig import *
 
 
-class AdaptiveNode(CTLearnNode):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        # self.obj = obj
-
-
-# ----------------------------------------------------------------
-# Base causal tree (ctl, base objective)
-# ----------------------------------------------------------------
-class AdaptiveTree(CTLearn):
+class BaseCausalTreeLearnNode(SigNode):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.root = AdaptiveNode()
 
-    def adaptive_eval(self, train_y, train_t):
-        total_train = train_y.shape[0]
 
-        train_effect = ace(train_y, train_t)
+class SigTreeBase(SigTree):
 
-        train_mse = total_train * (train_effect ** 2)
-
-        obj = train_mse
-        mse = total_train * (train_effect ** 2)
-
-        return obj, mse
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.root = BaseCausalTreeLearnNode()
 
     def fit(self, x, y, t):
         if x.shape[0] == 0:
@@ -40,15 +22,8 @@ class AdaptiveTree(CTLearn):
         # ----------------------------------------------------------------
         np.random.seed(self.seed)
 
-        # ----------------------------------------------------------------
-        # Verbosity?
-        # ----------------------------------------------------------------
-
-        # ----------------------------------------------------------------
-        # Split data
-        # ----------------------------------------------------------------
-
-        self.root.num_samples = y.shape[0]
+        train_x, train_y, train_t = x, y, t
+        self.root.num_samples = train_y.shape[0]
         # ----------------------------------------------------------------
         # effect and pvals
         # ----------------------------------------------------------------
@@ -57,11 +32,7 @@ class AdaptiveTree(CTLearn):
         self.root.effect = effect
         self.root.p_val = p_val
 
-        # ----------------------------------------------------------------
-        # Not sure if i should eval in root or not
-        # ----------------------------------------------------------------
-        node_eval, mse = self.adaptive_eval(y, t)
-        self.root.obj = node_eval
+        self.root.obj = 0
 
         # ----------------------------------------------------------------
         # Add control/treatment means
@@ -71,9 +42,9 @@ class AdaptiveTree(CTLearn):
 
         self.root.num_samples = x.shape[0]
 
-        self._fit(self.root, x, y, t)
+        self._fit(self.root, train_x, train_y, train_t)
 
-    def _fit(self, node: AdaptiveNode, train_x, train_y, train_t):
+    def _fit(self, node: BaseCausalTreeLearnNode, train_x, train_y, train_t):
 
         if train_x.shape[0] == 0:
             return node
@@ -91,7 +62,7 @@ class AdaptiveTree(CTLearn):
             node.is_leaf = True
             return node
 
-        best_gain = 0.0
+        best_gain = 1.0
         best_attributes = []
         best_tb_obj, best_fb_obj = (0.0, 0.0)
 
@@ -109,6 +80,7 @@ class AdaptiveTree(CTLearn):
                         0, len(unique_vals) - 1, self.max_values)).astype(int)
                     unique_vals = unique_vals[idx]
 
+            # using the faster evaluation with vector/matrix calculations
             for value in unique_vals:
 
                 # check training data size
@@ -119,16 +91,13 @@ class AdaptiveTree(CTLearn):
                 if check1 or check2:
                     continue
 
-                tb_eval, tb_mse = self.adaptive_eval(train_y1, train_t1)
-                fb_eval, fb_mse = self.adaptive_eval(train_y2, train_t2)
+                t_stat, diff_pval = self._eval(train_y1, train_t1, train_y2, train_t2)
 
-                split_eval = (tb_eval + fb_eval)
-                gain = -node.obj + split_eval
+                gain = diff_pval
 
-                if gain > best_gain:
+                if gain < best_gain and gain <= self.alpha:
                     best_gain = gain
                     best_attributes = [col, value]
-                    best_tb_obj, best_fb_obj = (tb_eval, fb_eval)
 
         if best_gain > 0:
             node.col = best_attributes[0]
@@ -149,16 +118,12 @@ class AdaptiveTree(CTLearn):
 
             self.obj = self.obj - node.obj + best_tb_obj + best_fb_obj
 
-            # ----------------------------------------------------------------
-            # Ignore "mse" here, come back to it later?
-            # ----------------------------------------------------------------
-
-            tb = AdaptiveNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
-                              node_depth=node.node_depth + 1,
-                              num_samples=y1.shape[0])
-            fb = AdaptiveNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
-                              node_depth=node.node_depth + 1,
-                              num_samples=y2.shape[0])
+            tb = BaseCausalTreeLearnNode(obj=best_tb_obj, effect=best_tb_effect, p_val=tb_p_val,
+                                         node_depth=node.node_depth + 1,
+                                         num_samples=y1.shape[0])
+            fb = BaseCausalTreeLearnNode(obj=best_fb_obj, effect=best_fb_effect, p_val=fb_p_val,
+                                         node_depth=node.node_depth + 1,
+                                         num_samples=y2.shape[0])
 
             node.true_branch = self._fit(tb, train_x1, train_y1, train_t1)
             node.false_branch = self._fit(fb, train_x2, train_y2, train_t2)

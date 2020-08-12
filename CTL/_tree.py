@@ -1,106 +1,18 @@
-from CTL.causal_tree.ctl.adaptive import *
-from CTL.causal_tree.ctl.honest import *
-from CTL.causal_tree.ctl.ctl_base import *
-from CTL.causal_tree.ctl.ctl_honest import *
-from CTL.causal_tree.ctl.ctl_val_honest import *
-
-from CTL.causal_tree.ctl_trigger.adaptive_trigger import *
-from CTL.causal_tree.ctl_trigger.ctl_base_trigger import *
-from CTL.causal_tree.ctl_trigger.ctl_honest_trigger import *
-from CTL.causal_tree.ctl_trigger.ctl_val_honest_trigger import *
-from CTL.causal_tree.ctl_trigger.honest_trigger import *
-
-from CTL._tree import _CausalTree
+try:
+    from CTL.causal_tree.util_c import *
+except:
+    from CTL.causal_tree.util import *
+import pickle as pkl
 
 
-class CausalTree(_CausalTree):
+class _CausalTree:
 
-    def __init__(self, cont=False, val_honest=False, honest=False, min_size=2, max_depth=-1, split_size=0.5, weight=0.5,
-                 seed=724, quartile=False, old_trigger_code=False, feature_batch_size=None, magnitude=True,
-                 max_values=None, verbose=False):
-        super().__init__()
-        self.cont = cont
-
-        params = {
-            "min_size": min_size,
-            "max_depth": max_depth,
-            "split_size": split_size,
-            "weight": weight,
-            "seed": seed,
-            "magnitude": magnitude,
-            "honest": True if honest or val_honest else False,
-            "max_values": max_values,
-            "verbose": verbose,
-        }
-        if cont:
-            params["quartile"] = quartile
-            params["old_trigger_code"] = old_trigger_code
-            if not honest and split_size <= 0.0 and weight <= 0.0:
-                # self.tree = AdaptiveTriggerTree(min_size=min_size, max_depth=max_depth,
-                #                                 split_size=split_size, weight=weight, seed=seed,
-                #                                 quartile=quartile, old_trigger_code=old_trigger_code)
-                self.tree = AdaptiveTriggerTree(**params)
-            elif honest and split_size <= 0.0 and weight <= 0.0:
-                self.tree = HonestTriggerTree(**params)
-            elif val_honest and weight > 0.0:
-                # self.tree = TriggerTreeHonestValidation(min_size=min_size, max_depth=max_depth,
-                #                                         split_size=split_size, weight=weight, seed=seed,
-                #                                         quartile=quartile, old_trigger_code=old_trigger_code)
-                self.tree = TriggerTreeHonestValidation(**params)
-            elif honest and weight > 0.0:
-                # self.tree = TriggerTreeHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                #                               weight=weight, seed=seed, quartile=quartile,
-                #                               old_trigger_code=old_trigger_code)
-                self.tree = TriggerTreeHonest(**params)
-            elif weight > 0.0 and split_size > 0.0:
-                # self.tree = TriggerTreeBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                #                             weight=weight, seed=seed, quartile=quartile,
-                #                             old_trigger_code=old_trigger_code)
-                self.tree = TriggerTreeBase(**params)
-            else:
-                # self.tree = AdaptiveTriggerTree(min_size=min_size, max_depth=max_depth,
-                #                                 split_size=split_size, weight=weight, seed=seed,
-                #                                 quartile=quartile, old_trigger_code=old_trigger_code)
-                self.tree = AdaptiveTriggerTree(**params)
-        else:
-            params["feature_batch_size"] = feature_batch_size
-            if not honest and split_size <= 0.0 and weight <= 0.0:
-                # self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
-                #                          split_size=split_size, weight=weight, seed=seed)
-                self.tree = AdaptiveTree(**params)
-            elif honest and split_size <= 0.0 and weight <= 0.0:
-                self.tree = HonestTree(**params)
-            elif val_honest and weight > 0.0:
-                # self.tree = CausalTreeLearnHonestValidation(min_size=min_size, max_depth=max_depth,
-                #                                             split_size=split_size, weight=weight, seed=seed,
-                #                                             feature_batch_size=feature_batch_size)
-                self.tree = CausalTreeLearnHonestValidation(**params)
-            elif honest and weight > 0.0:
-                # self.tree = CausalTreeLearnHonest(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                #                                   weight=weight, seed=seed, feature_batch_size=feature_batch_size)
-                self.tree = CausalTreeLearnHonest(**params)
-            elif weight > 0.0 and split_size > 0.0:
-                # self.tree = CausalTreeLearnBase(min_size=min_size, max_depth=max_depth, split_size=split_size,
-                #                                 weight=weight, seed=seed, feature_batch_size=feature_batch_size)
-                self.tree = CausalTreeLearnBase(**params)
-            else:
-                # self.tree = AdaptiveTree(min_size=min_size, max_depth=max_depth,
-                #                          split_size=split_size, weight=weight, seed=seed)
-                self.tree = AdaptiveTree(**params)
-
-        self.column_num = 0
-        self.fitted = False
-        self.tree_depth = 0
-        self.root = self.tree.root
+    def __init__(self):
+        self.cont = False
+        pass
 
     def fit(self, x, y, t):
-        self.column_num = x.shape[1]
-        x = x.astype(np.float)
-        y = y.astype(np.float)
-        t = t.astype(np.float)
-        self.tree.fit(x, y, t)
-        self.fitted = True
-        self.tree_depth = self.tree.tree_depth
+        pass
 
     def predict(self, x):
         if self.fitted:
@@ -110,7 +22,6 @@ class CausalTree(_CausalTree):
 
     def prune(self, alpha=0.05):
         self.tree.prune(alpha=alpha)
-        self.tree_depth = self.tree.tree_depth
 
     def get_groups(self, x):
         return self.tree.get_groups(x)
@@ -197,7 +108,7 @@ class CausalTree(_CausalTree):
                                 show_samples=show_samples, show_effect=show_effect, trigger_precision=trigger_precision)
             dot_file.write("}")
 
-    def _tree_to_dot_r(self, node: CTLearnNode, features, dot_file, counter, alpha=0.5, show_pval=True,
+    def _tree_to_dot_r(self, node, features, dot_file, counter, alpha=0.5, show_pval=True,
                        show_samples=True,
                        show_effect=True, trigger_precision=2):
 
@@ -298,53 +209,6 @@ class CausalTree(_CausalTree):
                 if color_idx >= 8:
                     font_color = ", fontcolor=white"
                     node_str.append(font_color)
-        # if self.tree.max_effect > 1 or self.tree.min_effect < -1:
-        #     effect_range = np.linspace(self.tree.min_effect, self.tree.max_effect, 10)
-        #     for idx, effect_r in enumerate(effect_range[:-1]):
-        #         if effect_range[idx] <= effect <= effect_range[idx + 1]:
-        #             # color = "\"/blues9/%i\"" % (idx + 1)
-        #             # rdbu9
-        #             color = "\"/rdbu9/%i\"" % (idx + 1)
-        #             color_idx = idx
-        #             break
-        #     if color_idx >= 8:
-        #         font_color = ", fontcolor=white"
-        #         node_str.append(font_color)
-        # else:
-        #     if np.abs(effect) <= eps:
-        #         color = "white"
-        #     else:
-        #         if effect > 0:
-        #             if self.tree.max_effect > 1:
-        #                 effect_range = np.linspace(0, self.tree.max_effect, 10)
-        #             else:
-        #                 effect_range = np.linspace(0, 1, 10)
-        #             for idx, effect_r in enumerate(effect_range[:-1]):
-        #                 if effect_range[idx] <= effect <= effect_range[idx + 1]:
-        #                     color = "\"/blues9/%i\"" % (idx + 1)
-        #                     color_idx = idx
-        #                     break
-        #             if color_idx >= 8:
-        #                 font_color = ", fontcolor=white"
-        #                 node_str.append(font_color)
-        #         else:
-        #             if self.tree.min_effect < -1:
-        #                 effect_range = np.linspace(self.tree.min_effect, 0, 10)[::-1]
-        #             else:
-        #                 effect_range = np.linspace(-1, 0, 10)[::-1]
-        #             for idx, effect_r in enumerate(effect_range[:-1]):
-        #                 # if effect_range[idx] >= effect >= effect_range[idx + 1]:
-        #                 #         color = "\"/reds9/%i\"" % (idx + 1)
-        #                 #         color_idx = idx
-        #                 #         break
-        #                 # if effect <= effect_range[idx] and effect >= effect_range[idx+1]:
-        #                 if effect_range[idx + 1] <= effect <= effect_range[idx]:
-        #                     color = "\"/reds9/%i\"" % (idx + 1)
-        #                     color_idx = idx
-        #                     break
-        #             if color_idx >= 8:
-        #                 font_color = ", fontcolor=white"
-        #                 node_str.append(font_color)
 
         color_str = ", fillcolor=" + color
         node_str.append(color_str)
@@ -404,7 +268,7 @@ class CausalTree(_CausalTree):
 
         variable_names = col_dict(feature_names)
 
-        def _assign_feature_names(node: CTLearnNode, feat_names):
+        def _assign_feature_names(node, feat_names):
 
             if not node.is_leaf:
                 sz_col = 'Column %s' % node.col
@@ -444,7 +308,7 @@ class CausalTree(_CausalTree):
             if variable_names is not None:
                 self.assign_feature_names(feature_names=variable_names)
 
-        def _get_variables(node: CTLearnNode, list_vars, list_depths):
+        def _get_variables(node, list_vars, list_depths):
 
             # print(node.is_leaf, node.true_branch, node.false_branch)
             if node.is_leaf:
@@ -482,3 +346,8 @@ class CausalTree(_CausalTree):
             sorted_vars.append(list_of_vars[i])
 
         return sorted_vars
+
+    def save(self, filename):
+        check_dir(filename)
+        with open(filename, "wb") as handle:
+            pkl.dump(self, handle)
