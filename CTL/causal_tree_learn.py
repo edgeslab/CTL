@@ -110,6 +110,7 @@ class CausalTree(_CausalTree):
 
     def prune(self, alpha=0.05):
         self.tree.prune(alpha=alpha)
+        self.tree_depth = self.tree.tree_depth
 
     def get_groups(self, x):
         return self.tree.get_groups(x)

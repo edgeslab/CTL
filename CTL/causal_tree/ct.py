@@ -13,10 +13,12 @@ class CausalTree(ABC):
     def __init__(self):
         super().__init__()
 
+        # the learning objective
         self.obj = 0.0
-
         # Haven't implemented "mse" yet
         self.mse = 0.0
+
+        # tree properties
         self.tree_depth = 0
         self.num_leaves = 0
 
