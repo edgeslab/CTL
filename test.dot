@@ -1,5 +1,0 @@
-digraph Tree {
-node [shape=box, fontsize=32] ;
-edge [fontsize=24] ;
-0 [label="effect = 0.004\np = 0.961\nsamples = 500\nColumn -1 >= -1\n", style=filled, fillcolor=white] ;
-}
