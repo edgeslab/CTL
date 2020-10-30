@@ -4935,7 +4935,7 @@ static PyObject *__pyx_f_3CTL_11causal_tree_6util_c_variance(PyArrayObject *__py
  * 
  *     for i in range(tmax):             # <<<<<<<<<<<<<<
  *         if t[i] <= 0.5:
- *             var_c += y[i] - mu0
+ *             var_c += (y[i] - mu0)**2
  */
   __pyx_t_2 = __pyx_v_tmax;
   __pyx_t_3 = __pyx_t_2;
@@ -4946,7 +4946,7 @@ static PyObject *__pyx_f_3CTL_11causal_tree_6util_c_variance(PyArrayObject *__py
  * 
  *     for i in range(tmax):
  *         if t[i] <= 0.5:             # <<<<<<<<<<<<<<
- *             var_c += y[i] - mu0
+ *             var_c += (y[i] - mu0)**2
  *         else:
  */
     __pyx_t_10 = __pyx_v_i;
@@ -4965,9 +4965,9 @@ static PyObject *__pyx_f_3CTL_11causal_tree_6util_c_variance(PyArrayObject *__py
       /* "CTL/causal_tree/util_c.pyx":133
  *     for i in range(tmax):
  *         if t[i] <= 0.5:
- *             var_c += y[i] - mu0             # <<<<<<<<<<<<<<
+ *             var_c += (y[i] - mu0)**2             # <<<<<<<<<<<<<<
  *         else:
- *             var_t += y[i] - mu1
+ *             var_t += (y[i] - mu1)**2
  */
       __pyx_t_11 = __pyx_v_i;
       __pyx_t_6 = -1;
@@ -4979,22 +4979,22 @@ static PyObject *__pyx_f_3CTL_11causal_tree_6util_c_variance(PyArrayObject *__py
         __Pyx_RaiseBufferIndexError(__pyx_t_6);
         __PYX_ERR(0, 133, __pyx_L1_error)
       }
-      __pyx_v_var_c = (__pyx_v_var_c + ((*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float_t *, __pyx_pybuffernd_y.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_y.diminfo[0].strides)) - __pyx_v_mu0));
+      __pyx_v_var_c = (__pyx_v_var_c + pow(((*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float_t *, __pyx_pybuffernd_y.rcbuffer->pybuffer.buf, __pyx_t_11, __pyx_pybuffernd_y.diminfo[0].strides)) - __pyx_v_mu0), 2.0));
 
       /* "CTL/causal_tree/util_c.pyx":132
  * 
  *     for i in range(tmax):
  *         if t[i] <= 0.5:             # <<<<<<<<<<<<<<
- *             var_c += y[i] - mu0
+ *             var_c += (y[i] - mu0)**2
  *         else:
  */
       goto __pyx_L10;
     }
 
     /* "CTL/causal_tree/util_c.pyx":135
- *             var_c += y[i] - mu0
+ *             var_c += (y[i] - mu0)**2
  *         else:
- *             var_t += y[i] - mu1             # <<<<<<<<<<<<<<
+ *             var_t += (y[i] - mu1)**2             # <<<<<<<<<<<<<<
  * 
  *     if mu0_denom == 0:
  */
@@ -5009,13 +5009,13 @@ static PyObject *__pyx_f_3CTL_11causal_tree_6util_c_variance(PyArrayObject *__py
         __Pyx_RaiseBufferIndexError(__pyx_t_6);
         __PYX_ERR(0, 135, __pyx_L1_error)
       }
-      __pyx_v_var_t = (__pyx_v_var_t + ((*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float_t *, __pyx_pybuffernd_y.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_y.diminfo[0].strides)) - __pyx_v_mu1));
+      __pyx_v_var_t = (__pyx_v_var_t + pow(((*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float_t *, __pyx_pybuffernd_y.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_y.diminfo[0].strides)) - __pyx_v_mu1), 2.0));
     }
     __pyx_L10:;
   }
 
   /* "CTL/causal_tree/util_c.pyx":137
- *             var_t += y[i] - mu1
+ *             var_t += (y[i] - mu1)**2
  * 
  *     if mu0_denom == 0:             # <<<<<<<<<<<<<<
  *         var_c = 0
@@ -5034,7 +5034,7 @@ static PyObject *__pyx_f_3CTL_11causal_tree_6util_c_variance(PyArrayObject *__py
     __pyx_v_var_c = 0.0;
 
     /* "CTL/causal_tree/util_c.pyx":137
- *             var_t += y[i] - mu1
+ *             var_t += (y[i] - mu1)**2
  * 
  *     if mu0_denom == 0:             # <<<<<<<<<<<<<<
  *         var_c = 0

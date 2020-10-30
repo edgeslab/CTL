@@ -68,8 +68,6 @@ class SigTree(CausalTree):
         return effect, std
 
     def _eval(self, y_train1, t_train1, y_train2, t_train2):
-        effect1, std1 = self._eval_util(y_train1, t_train1)
-        effect2, std2 = self._eval_util(y_train2, t_train2)
 
         total1 = y_train1.shape[0]
         total2 = y_train2.shape[0]
@@ -77,9 +75,12 @@ class SigTree(CausalTree):
         return_val = (1, 1)
         if total1 < 1 or total2 < 1:
             return return_val
-        else:
-            stat, p_val = ttest_ind_from_stats(effect1, std1, total1, effect2, std2, total2)
-            return stat, p_val
+
+        effect1, std1 = self._eval_util(y_train1, t_train1)
+        effect2, std2 = self._eval_util(y_train2, t_train2)
+
+        stat, p_val = ttest_ind_from_stats(effect1, std1, total1, effect2, std2, total2)
+        return stat, p_val
 
     def predict(self, x):
 

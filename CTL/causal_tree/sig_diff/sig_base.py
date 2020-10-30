@@ -80,7 +80,6 @@ class SigTreeBase(SigTree):
                         0, len(unique_vals) - 1, self.max_values)).astype(int)
                     unique_vals = unique_vals[idx]
 
-            # using the faster evaluation with vector/matrix calculations
             for value in unique_vals:
 
                 # check training data size
@@ -99,7 +98,7 @@ class SigTreeBase(SigTree):
                     best_gain = gain
                     best_attributes = [col, value]
 
-        if best_gain > 0:
+        if best_gain <= self.alpha:
             node.col = best_attributes[0]
             node.value = best_attributes[1]
 

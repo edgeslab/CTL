@@ -130,9 +130,9 @@ cpdef variance(np.ndarray[np.float_t, ndim=1] y, np.ndarray[np.float_t, ndim=1] 
 
     for i in range(tmax):
         if t[i] <= 0.5:
-            var_c += y[i] - mu0
+            var_c += (y[i] - mu0)**2
         else:
-            var_t += y[i] - mu1
+            var_t += (y[i] - mu1)**2
 
     if mu0_denom == 0:
         var_c = 0
