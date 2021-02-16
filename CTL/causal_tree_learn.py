@@ -37,11 +37,11 @@ class CausalTree(_CausalTree):
             params["old_trigger_code"] = old_trigger_code
             if not honest and split_size <= 0.0 and weight <= 0.0:
                 self.tree = AdaptiveTriggerTree(**params)
-            elif honest and split_size <= 0.0 and weight <= 0.0:
+            elif honest and (split_size <= 0.0 or weight <= 0.0):
                 self.tree = HonestTriggerTree(**params)
-            elif val_honest and weight > 0.0:
+            elif val_honest and weight > 0.0 and split_size > 0.0:
                 self.tree = TriggerTreeHonestValidation(**params)
-            elif honest and weight > 0.0:
+            elif honest and weight > 0.0 and split_size > 0.0:
                 self.tree = TriggerTreeHonest(**params)
             elif weight > 0.0 and split_size > 0.0:
                 self.tree = TriggerTreeBase(**params)
@@ -51,11 +51,11 @@ class CausalTree(_CausalTree):
             params["feature_batch_size"] = feature_batch_size
             if not honest and split_size <= 0.0 and weight <= 0.0:
                 self.tree = AdaptiveTree(**params)
-            elif honest and split_size <= 0.0 and weight <= 0.0:
+            elif honest and (split_size <= 0.0 or weight <= 0.0):
                 self.tree = HonestTree(**params)
-            elif val_honest and weight > 0.0:
+            elif val_honest and weight > 0.0 and split_size > 0.0:
                 self.tree = CausalTreeLearnHonestValidation(**params)
-            elif honest and weight > 0.0:
+            elif honest and weight > 0.0 and split_size > 0.0:
                 self.tree = CausalTreeLearnHonest(**params)
             elif weight > 0.0 and split_size > 0.0:
                 self.tree = CausalTreeLearnBase(**params)
