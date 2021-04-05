@@ -32,29 +32,29 @@ ctl.fit(x_train, y_train, treat_train)
 ctl.prune()
 ctl_predict = ctl.predict(x_test)
 
-# honest CTL
+# honest CTL (CT-HL)
 cthl = CausalTree(honest=True)
 cthl.fit(x_train, y_train, treat_train)
 cthl.prune()
-cth_predict = cthl.predict(x_test)
+cthl_predict = cthl.predict(x_test)
 
-# val honest CTL
+# val honest CTL (CT-HV)
 cthv = CausalTree(val_honest=True)
 cthv.fit(x_train, y_train, treat_train)
 cthv.prune()
 cthv_predict = cthv.predict(x_test)
 
-# adaptive CT
+# adaptive CT (Athey and Imbens, PNAS 2016)
 ct_adaptive = CausalTree(weight=0.0, split_size=0.0)
 ct_adaptive.fit(x_train, y_train, treat_train)
 ct_adaptive.prune()
 ct_adaptive_predict = cthv.predict(x_test)
 
-# adaptive CT
+# honest CT (Athey and Imbens, PNAS 2016)
 ct_honest = CausalTree(honest=True, weight=0.0, split_size=0.0)
 ct_honest.fit(x_train, y_train, treat_train)
 ct_honest.prune()
-ct_honest_predict = cthv.predict(x_test)
+ct_honest_predict = ct_honest.predict(x_test)
 
 ct_adaptive.plot_tree(features=columns, filename="output/bin_tree_adaptive", show_effect=True)
 ct_honest.plot_tree(features=columns, filename="output/bin_tree_honest", show_effect=True)
