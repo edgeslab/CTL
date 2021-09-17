@@ -23,3 +23,4 @@ test3.py
 .ipynb_checkpoints
 
 test.*
+/dist (1)/
