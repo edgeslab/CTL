@@ -33,12 +33,12 @@ cthv_predict = cthv.predict(x_test)
 # adaptive CT
 ct_adaptive = CausalTree(weight=0.0, split_size=0.0, cont=True)
 ct_adaptive.fit(x_train, y_train, treat_train)
-ct_adaptive_predict = cthv.predict(x_test)
+ct_adaptive_predict = ct_adaptive.predict(x_test)
 
 # honest CT
 ct_honest = CausalTree(honest=True, weight=0.0, split_size=0.0, cont=True)
 ct_honest.fit(x_train, y_train, treat_train)
-ct_honest_predict = cthv.predict(x_test)
+ct_honest_predict = ct_honest.predict(x_test)
 
 # to get which examples are in which leaf
 groups = cthv.get_groups(x_test)
