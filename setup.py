@@ -37,8 +37,8 @@ else:
 
 
 setup(
-    name="causal_tree_learn",
-    version="2.42",
+    name="causal-tree-learn",
+    version="2.43",
     author="Christopher Tran",
     author_email="ctran29@uic.edu",
     description="Python implementation of causal trees with validation",
