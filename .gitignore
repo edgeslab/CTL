@@ -2,9 +2,9 @@ output/
 __pycache__/
 .DS_store
 .idea/
-build/
-causal_tree_learn.egg-info
-dist
+# build/
+# causal_tree_learn.egg-info
+# dist
 /backup/
 notebooks/
 
@@ -24,3 +24,6 @@ test3.py
 
 test.*
 /dist (1)/
+
+notes.txt
+.venv
