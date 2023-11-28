@@ -359,9 +359,9 @@ cpdef tau_squared_trigger(np.ndarray[np.float_t, ndim=1] y, np.ndarray[np.float_
     cdef np.ndarray[np.float_t, ndim=2] tt
     cdef np.ndarray x
 
-    cdef np.ndarray[np.long_t, ndim=1] treat_num
-    cdef np.ndarray[np.long_t, ndim=1] cont_num
-    cdef np.ndarray[np.long_t, ndim=1] min_size_idx
+    cdef np.ndarray[np.longlong_t, ndim=1] treat_num
+    cdef np.ndarray[np.longlong_t, ndim=1] cont_num
+    cdef np.ndarray[np.longlong_t, ndim=1] min_size_idx
 
     cdef np.ndarray[np.float_t, ndim=1] y_t_m
     cdef np.ndarray[np.float_t, ndim=1] y_c_m
